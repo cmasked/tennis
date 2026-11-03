@@ -9,7 +9,8 @@
   "scripts": {
     "api:fixtures": "node --use-env-proxy --env-file-if-exists=.env src/fixtures.ts",
     "test": "node --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api:live": "node --use-env-proxy --env-file-if-exists=.env src/live.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

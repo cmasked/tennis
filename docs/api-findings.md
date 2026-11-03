@@ -60,3 +60,16 @@ Tests use entirely synthetic match data, not retained provider responses.
 `npm run api:fixtures` makes one request with no retries or pagination.
 No API requests were made while implementing the validated fixture list.
 Real response recording remains opt-in (`--save`) and subject to retention terms.
+
+## Live-lookup inspector implementation
+
+`npm run api:live -- <numeric-match-id>` now performs one ATP lookup using the
+exact path/query pattern observed in `links.live`. It uses the fixture's numeric
+`matchId`, preserving `type=atp&source=today`, not the compound `liveMatchId`.
+This observed template has not yet been independently tested against a live
+response. The command does not claim that every upcoming fixture is available
+in the `today` source. It prints redacted JSON for schema discovery, with explicit
+truncation and uncertainty notices, and never automatically follows a mapping.
+No live scoring, server, statistics or point-history fields are assumed.
+The inspector tests use synthetic JSON; no provider requests were made during
+implementation. A real user-run lookup is the next validation step.

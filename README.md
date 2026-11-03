@@ -79,3 +79,27 @@ rate limits, and network failures. They are not recorded tennis data.
 See [API findings](docs/api-findings.md) for confirmed fields and open questions.
 The tests include synthetic match parsing, invalid fields, missing optional data,
 and timezone conversion; none consume API quota.
+
+## Inspect one ATP live lookup
+
+Use the numeric **Match ID** from the fixture list (not the compound Live ID):
+
+```powershell
+git pull origin main
+npm run api:live -- 1389644
+```
+
+The number above is from an earlier user-run fixture list, not a guarantee that
+this match is currently live or still available through the `source=today`
+lookup. Prefer a match scheduled around the time you test. This command makes
+exactly one request to the observed link pattern
+`/tennis/v2/matches/{matchId}/live?type=atp&source=today`.
+It does not first fetch fixtures, poll, retry, or follow additional links.
+
+The command prints redacted provider JSON, capped at 16000 characters. Review
+it before sharing. It checks the JSON envelope but does not yet validate or
+interpret the unknown live schema. A successful lookup may contain a mapping
+rather than scores; missing/empty data does not establish lack of API coverage.
+We will inspect actual fields before implementing score or point-history parsing.
+An invalid ID or missing key fails without an API request. This inspector does
+not save provider data to disk. The same backend-only key from `.env` is used.

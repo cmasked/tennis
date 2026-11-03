@@ -17,11 +17,19 @@ export function parsePayload(text: string): Record<string, unknown> | unknown[] 
   return value as Record<string, unknown> | unknown[];
 }
 
-export async function fetchFixtures(key: string | undefined, request: typeof fetch = fetch) {
+export function fetchFixtures(key: string | undefined, request: typeof fetch = fetch) {
+  return fetchProviderJson(FIXTURES_URL, key, request);
+}
+
+export async function fetchProviderJson(url: string, key: string | undefined, request: typeof fetch = fetch) {
+  const target = new URL(url);
+  if (target.origin !== `https://${API_HOST}` || target.username || target.password || target.hash) {
+    throw new Error('Only the fixed HTTPS tennis API host is allowed.');
+  }
   if (!key?.trim()) throw new Error('Set TENNIS_API_KEY in .env or your shell before running this command.');
   let response: Response;
   try {
-    response = await request(FIXTURES_URL, {
+    response = await request(url, {
       headers: { 'X-RapidAPI-Key': key.trim(), 'X-RapidAPI-Host': API_HOST, Accept: 'application/json' },
       signal: AbortSignal.timeout(20_000),
       redirect: 'error',
