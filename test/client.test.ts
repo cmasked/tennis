@@ -10,6 +10,10 @@ test('missing key makes no network request', async () => {
 test('sends credentials only in headers to the fixed provider endpoint', async () => {
   const result = await fetchFixtures('test-only-key', async (url, options) => {
     assert.equal(url, FIXTURES_URL);
+    const endpoint = new URL(String(url));
+    assert.equal(endpoint.pathname, "/tennis/v2/upcoming/matches/atp");
+    assert.equal(endpoint.searchParams.get("limit"), "10");
+    assert.equal(endpoint.searchParams.get("page"), "1");
     assert.equal(options?.redirect, 'error');
     assert.deepEqual(options?.headers, { 'X-RapidAPI-Key': 'test-only-key', 'X-RapidAPI-Host': API_HOST, Accept: 'application/json' });
     return new Response('[]');

@@ -1,7 +1,7 @@
 # Visual Tennis Companion — first data integration
 
 A small backend-only TypeScript tool to test a Matchstat RapidAPI key against
-`GET https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/atp/fixtures`.
+`GET https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/upcoming/matches/atp?limit=10&autoPost=false&include=all&includeAll=false&page=1`.
 No mobile app or match engine yet.
 
 ## Requirements and installation
@@ -11,8 +11,8 @@ to Matchstat Tennis API — ATP WTA ITF. A valid RapidAPI key alone may not gran
 access to this particular API. Use the free plan for this experiment.
 
 ```sh
-cd /workspace/tennis
-npm ci --cache /workspace/.npm-cache
+cd tennis
+npm ci
 cp -n .env.example .env
 ```
 
@@ -20,6 +20,9 @@ Edit `.env` privately and set `TENNIS_API_KEY`. Do not paste the key in chat,
 commit it, or put it in frontend code. Alternatively inject this environment
 variable using your environment's secure settings. For a proxy-backed binding,
 allow the destination `tennis-api-atp-wta-itf.p.rapidapi.com`.
+
+On Windows, run from your clone (for example `D:\tennis\tennis`). If `.env`
+already exists, keep it; otherwise copy `.env.example` to `.env`.
 
 ## Test your key
 

@@ -1,5 +1,5 @@
 export const API_HOST = 'tennis-api-atp-wta-itf.p.rapidapi.com';
-export const FIXTURES_URL = `https://${API_HOST}/tennis/v2/atp/fixtures`;
+export const FIXTURES_URL = `https://${API_HOST}/tennis/v2/upcoming/matches/atp?limit=10&autoPost=false&include=all&includeAll=false&page=1`;
 
 // Only validate the envelope until a real payload establishes the provider schema.
 // No player, fixture, or match ID fields are assumed here.
