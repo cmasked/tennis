@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { fetchFixtures, summarize } from './client.ts';
+import { fetchFixtures } from './client.ts';
+import { parseUpcomingPage, formatUpcomingPage } from './matches.ts';
 
 const args = process.argv.slice(2);
 if (args.some(arg => arg !== '--save')) {
@@ -8,8 +9,9 @@ if (args.some(arg => arg !== '--save')) {
 } else {
   try {
     const payload = await fetchFixtures(process.env.TENNIS_API_KEY);
-    console.log('ATP fixtures request succeeded. Response is valid JSON.');
-    console.log(summarize(payload));
+    const page = parseUpcomingPage(payload);
+    console.log('ATP fixtures request succeeded. Validated upcoming-match fields.');
+    console.log(formatUpcomingPage(page));
     if (args.includes('--save')) {
       // Redact credential-like fields and the exact supplied key defensively.
       const secret = process.env.TENNIS_API_KEY!.trim();

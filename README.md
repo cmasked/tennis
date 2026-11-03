@@ -31,9 +31,11 @@ npm run api:fixtures
 ```
 
 Each invocation makes **one request**, with a 20-second timeout and no retries.
-It prints a response summary, not the key, headers, or raw provider body. A success
-means this endpoint returned acceptable JSON; it does not validate point-by-point
-coverage, latency, licensing, or all fixture fields.
+It validates `total`, `matches`, participant and tournament fields, identifiers,
+and scheduled timestamps. It prints a readable match list with times in your
+computer's timezone, not the key, headers, or raw provider body. Unknown schedules
+and optional fields are labeled explicitly. This does not validate live scores,
+point-by-point coverage, latency, licensing, or all fixture fields.
 
 Optional: after confirming provider retention terms permit local development
 storage, save a redacted response for schema inspection:
@@ -44,9 +46,9 @@ npm run api:fixtures -- --save
 
 Responses go into Git-ignored `local-data/`. Redaction removes credential-like
 fields and the supplied key; inspect any recorded data before sharing it.
-An empty array is reported as empty, not an authentication failure. Object
-payloads need inspection to identify where fixtures live; no undocumented
-player, date, or match-ID fields are assumed.
+An empty `matches` array is reported as an empty page. Malformed required fields
+fail with a field path (for example `matches[0].player1.name`). Extra provider
+fields are ignored. No additional pages or live links are fetched automatically.
 
 ## Troubleshooting
 
@@ -71,7 +73,9 @@ Tests use synthetic HTTP responses and spend no API quota. They cover credential
 headers, missing configuration, empty results, malformed JSON, provider errors,
 rate limits, and network failures. They are not recorded tennis data.
 
-`src/client.ts` handles the HTTP request and minimal envelope validation.
-`src/fixtures.ts` loads configuration, prints a summary, and optionally saves data.
-After a real response is available, document its observed fields and strengthen
-the schema before implementing normalization or the match engine.
+`src/client.ts` handles HTTP and JSON envelope validation.
+`src/matches.ts` validates observed fixture fields and formats the match list.
+`src/fixtures.ts` loads configuration, runs the adapter, and optionally saves data.
+See [API findings](docs/api-findings.md) for confirmed fields and open questions.
+The tests include synthetic match parsing, invalid fields, missing optional data,
+and timezone conversion; none consume API quota.
