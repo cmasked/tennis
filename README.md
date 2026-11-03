@@ -89,17 +89,32 @@ npm run api:live-list
 ```
 
 Only the final command calls the tennis API: **one request, no retries** to
-`/tennis/v2/extend/api/events/live`. It does not fetch upcoming fixtures, inspect
-individual matches, poll, follow links, or save data. It prints redacted provider
-JSON (up to 16000 characters, with a truncation notice) for schema discovery.
-Review the response before sharing it. Empty JSON is not interpreted as proof
-that no tennis is being played; coverage and schema remain unverified.
+`/tennis/v2/extend/api/events/live`. It prints a validated, readable snapshot with
+participants, tournament, tour, provider status, reported score, current game
+points, event ID, compound match ID, and provider update time. It does not fetch
+upcoming fixtures, inspect individual matches, poll, follow links, or save data.
 
-We have not yet observed this route's response fields, so we do not invent a
-normalized match list, score, server, or point-history structure. Share the
-returned structure so we can identify actual matches and documented next links.
-Live event IDs are not necessarily fixture Match IDs. Do not feed an arbitrary
-live event ID to `api:live`.
+Optional local filters (each invocation still makes one request):
+
+```powershell
+npm run api:live-list -- --tour atp --tournament Paris
+```
+
+Use **one** list command per check, not all examples in sequence. Filters are
+applied after fetching the feed; they do not reduce or increase request count.
+Times use your computer's timezone. Missing scores/points are explicitly marked
+unavailable. Events whose `updatedAt` is over 120 seconds before fetch are marked
+potentially stale; this is a heuristic, not a proven latency measurement. Unknown
+provider status strings are displayed rather than silently treated as InPlay.
+
+To inspect raw redacted JSON instead of the readable list, use `--raw`. This is
+an alternative command, not a second step; it makes another request if run again.
+Raw output is capped at 16000 characters; the readable list is not subject to
+that JSON display cap. Local filters do not apply in raw mode.
+
+Current game points are not point-by-point history. Server indicator semantics
+are unverified. Event IDs and compound match IDs are not fixture IDs; don't feed
+them into `api:live`. We still need a verified documented point-history route.
 
 ## Inspect one ATP live lookup
 

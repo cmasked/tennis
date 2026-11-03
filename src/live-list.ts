@@ -1,15 +1,17 @@
 import { fetchLiveEvents, formatLiveInspection } from './live-inspector.ts';
+import { parseLiveEvents, parseLiveOptions, formatLiveEvents } from './live-events.ts';
 
-if (process.argv.length !== 2) {
-  console.error('Usage: npm run api:live-list (no arguments)');
+try {
+  const options = parseLiveOptions(process.argv.slice(2));
+  const key = process.env.TENNIS_API_KEY;
+  const payload = await fetchLiveEvents(key);
+  const fetchedAt = Date.now();
+  const output = options.raw
+    ? formatLiveInspection(payload, key!.trim(), 'list')
+    : formatLiveEvents(parseLiveEvents(payload), options, fetchedAt);
+  // Defense in depth if the provider echoes the exact credential in a text field.
+  console.log(output.split(key!.trim()).join('[REDACTED]'));
+} catch (error) {
+  console.error(error instanceof Error ? error.message : 'Unexpected live-events failure.');
   process.exitCode = 1;
-} else {
-  try {
-    const key = process.env.TENNIS_API_KEY;
-    const payload = await fetchLiveEvents(key);
-    console.log(formatLiveInspection(payload, key!.trim(), 'list'));
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : 'Unexpected live-events failure.');
-    process.exitCode = 1;
-  }
 }

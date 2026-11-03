@@ -89,3 +89,43 @@ ID does not establish that a match is currently live. The next user-run response
 will establish the actual event structure and the appropriate identifier/lookup
 route. Do not assume live-event IDs work with the ATP fixture mapping command.
 No provider requests were made while adding this command.
+
+## Observed live-event response and readable adapter
+
+The founder's successful `api:live-list` output established an envelope of
+`success: true` and `results: [...]`, with ATP and WTA events across tour tiers.
+The redacted terminal output was truncated by our old display limit; no complete
+feed count can be established from that excerpt.
+
+| Observed field | Shape | Interpretation / limits |
+| --- | --- | --- |
+| `id` | String | Live event identifier; not the numeric ATP fixture ID |
+| `matchId` | Compound string | Distinct identifier, retained without interpreting its components |
+| `participant1`, `participant2` | Strings | Player display names |
+| `league`, `tourType` | Strings | Tournament label and tour dataset |
+| `status` | String, observed `InPlay` | Provider claim, not independent confirmation of current play |
+| `score` | String or null | Raw reported score, not yet parsed into tennis state |
+| `points` | String or null | Current game score such as `30-40`, not a point history |
+| `indicator` | String or null | Meaning unverified; not mapped to a server |
+| `updatedAt` | Integer, millisecond-scale | Displayed as epoch milliseconds; upstream timing semantics unverified |
+| `startTimestamp` | Integer, second-scale | Observed but not used as a freshness timestamp |
+
+`src/live-events.ts` validates the observed envelope and required display fields,
+keeps nullable scores/identifiers explicit, ignores extra fields, and separates
+live identifiers from fixture identifiers. `api:live-list` now prints the full
+readable list by default; optional tour/tournament filtering happens locally.
+`--raw` retains the old redacted JSON inspection mode without extra requests
+within that invocation. The broad raw credential redactor also hid `matchKey`;
+we do not treat its redacted value as evidence of a missing provider field.
+
+Fetch time and provider update time are displayed separately. A >120s difference
+is labeled potentially stale, explicitly as a heuristic; it is not a measured
+provider latency guarantee. Future timestamps are flagged. Provider status is
+preserved even if it differs from InPlay. Snapshot output never implies polling.
+
+Point-history discovery remains blocked: an attempt to read the official
+`https://docs.tennis-api.com/getting-started` reference received HTTP 403 from the
+cloud CONNECT proxy on this setup. This is documentation-access evidence, not a
+tennis API permission failure. No point-history endpoint was guessed or called.
+We need accessible official documentation or its exact route/parameters before
+adding that request. No provider API quota was consumed during this update.
