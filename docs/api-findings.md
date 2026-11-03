@@ -73,3 +73,19 @@ truncation and uncertainty notices, and never automatically follows a mapping.
 No live scoring, server, statistics or point-history fields are assumed.
 The inspector tests use synthetic JSON; no provider requests were made during
 implementation. A real user-run lookup is the next validation step.
+
+## Live-event discovery command
+
+`npm run api:live-list` now requests
+`/tennis/v2/extend/api/events/live` once, using the endpoint listed in the supplied
+project provider reference. The response schema and availability on the user's
+plan have not yet been independently observed. Output is redacted JSON with a
+16000-character display limit, not a guessed interpretation of live event fields.
+Synthetic tests confirm one request, no retries or automatic follow-ups, safe
+credential handling, and explicit uncertainty for empty results.
+
+Use this before choosing a match to inspect. A scheduled fixture or old example
+ID does not establish that a match is currently live. The next user-run response
+will establish the actual event structure and the appropriate identifier/lookup
+route. Do not assume live-event IDs work with the ATP fixture mapping command.
+No provider requests were made while adding this command.

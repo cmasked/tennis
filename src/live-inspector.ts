@@ -13,7 +13,15 @@ export function fetchLiveLookup(matchId: string, key: string | undefined, reques
   return fetchProviderJson(liveLookupUrl(matchId), key, request);
 }
 
-export function formatLiveInspection(payload: unknown, key: string): string {
+// Endpoint specified in the project's provider reference; its live response
+// structure still needs to be observed. This is not an upcoming-fixtures query.
+export const LIVE_EVENTS_URL = `https://${API_HOST}/tennis/v2/extend/api/events/live`;
+
+export function fetchLiveEvents(key: string | undefined, request: typeof fetch = fetch) {
+  return fetchProviderJson(LIVE_EVENTS_URL, key, request);
+}
+
+export function formatLiveInspection(payload: unknown, key: string, mode: 'lookup' | 'list' = 'lookup'): string {
   // The live response schema is not yet observed. Print redacted JSON for
   // inspection, not invented normalized score/server/point fields.
   const serialized = JSON.stringify(payload, (field, value: unknown) => {
@@ -27,9 +35,14 @@ export function formatLiveInspection(payload: unknown, key: string): string {
   const redacted = key ? serialized.split(key).join('[REDACTED]') : serialized;
   const limit = 16000;
   return [
-    'ATP live lookup succeeded. JSON envelope validated; live field schema is not yet verified.',
-    'One lookup only: no polling, pagination, or automatic follow-up requests.',
-    'A live lookup may return only a mapping, an empty result, or an unavailable match.',
+    mode === 'list'
+      ? 'Live-events request succeeded. JSON envelope validated; event schema is not yet verified.'
+      : 'ATP live lookup succeeded. JSON envelope validated; live field schema is not yet verified.',
+    'One request only: no polling, pagination, or automatic follow-up requests.',
+    mode === 'list'
+      ? 'Provider-reported live events below. Coverage, status semantics, and identifier mapping need inspection.'
+      : 'A live lookup may return only a mapping, an empty result, or an unavailable match.',
+    ...(mode === 'list' ? ['Do not pass an arbitrary event ID to api:live: that command expects a numeric ATP fixture Match ID.'] : []),
     'Do not interpret this as verified live scoring or point history.',
     '',
     redacted.slice(0, limit),

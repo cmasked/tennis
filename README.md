@@ -80,9 +80,32 @@ See [API findings](docs/api-findings.md) for confirmed fields and open questions
 The tests include synthetic match parsing, invalid fields, missing optional data,
 and timezone conversion; none consume API quota.
 
+## Discover currently live matches first
+
+```powershell
+cd D:\tennis\tennis
+git pull origin main
+npm run api:live-list
+```
+
+Only the final command calls the tennis API: **one request, no retries** to
+`/tennis/v2/extend/api/events/live`. It does not fetch upcoming fixtures, inspect
+individual matches, poll, follow links, or save data. It prints redacted provider
+JSON (up to 16000 characters, with a truncation notice) for schema discovery.
+Review the response before sharing it. Empty JSON is not interpreted as proof
+that no tennis is being played; coverage and schema remain unverified.
+
+We have not yet observed this route's response fields, so we do not invent a
+normalized match list, score, server, or point-history structure. Share the
+returned structure so we can identify actual matches and documented next links.
+Live event IDs are not necessarily fixture Match IDs. Do not feed an arbitrary
+live event ID to `api:live`.
+
 ## Inspect one ATP live lookup
 
-Use the numeric **Match ID** from the fixture list (not the compound Live ID):
+This is a separate fixture-to-live mapping tool, not a live-event discovery
+command. Use it only when you need a specific fixture lookup. Use the numeric
+**Match ID** from the fixture list (not a live-event ID or compound Live ID):
 
 ```powershell
 git pull origin main
