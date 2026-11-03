@@ -194,3 +194,15 @@ These are consistency checks with limited alignment assumptions, not evidence
 of live freshness or complete scoring history. Documentation licensing questions,
 correction handling across snapshots, tiebreaks and match-format selection remain
 open before a reliable production engine can be claimed.
+
+## Offline engine foundation
+
+The provider adapter is now separated from the domain engine. The live validator
+reuses `adaptMatchstatPoints`; the standalone replay consumes synthetic domain
+snapshots and makes zero API requests. No raw responses were retained.
+
+Structured moments carry stable IDs, game position, confidence and evidence
+basis. Snapshot reconciliation exposes additions, updates and retractions rather
+than repeatedly appending commentary. Duplicate game records withhold moments
+for the affected game. This is not durable deduplication or an ingestion ordering
+guarantee. See offline-replay.md for tested scenarios and deferred capabilities.

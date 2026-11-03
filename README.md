@@ -4,6 +4,22 @@ A small backend-only TypeScript tool to test a Matchstat RapidAPI key against
 `GET https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/upcoming/matches/atp?limit=10&autoPost=false&include=all&includeAll=false&page=1`.
 No mobile app or match engine yet.
 
+## Offline engine replay — no API requests
+
+```powershell
+cd D:\tennis\tennis
+git pull origin main
+npm test
+npm run typecheck
+npm run replay
+```
+
+Replay uses clearly labeled synthetic snapshots and requires no key. It shows
+holds, breaks, saved break points, duplicate suppression, corrections/retractions,
+and explicit uncertainty. See [the offline review guide](docs/offline-replay.md)
+for expected output, important files, and current limitations. You do not need
+to run any `api:*` command to review this increment.
+
 ## Requirements and installation
 
 Node.js 24.10+ (Node 24 LTS recommended), npm, and an active RapidAPI subscription

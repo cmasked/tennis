@@ -1,4 +1,5 @@
-import { analyzeGames, formatGameAnalysis, crossCheckTimeline, type GameRecord } from './scoring.ts';
+import { adaptMatchstatPoints } from './adapters/matchstat-points.ts';
+import { analyzeGames, formatGameAnalysis, crossCheckTimeline } from './scoring.ts';
 import { describeShape } from './diagnostics.ts';
 import { API_HOST, fetchProviderJson } from './client.ts';
 import { fetchLiveEvents } from './live-inspector.ts';
@@ -38,7 +39,6 @@ export function inspectPoints(payload: unknown, event: LiveEvent): string {
   const sets = list(result.sets, 'result.sets');
   const lines = [identity(first, second, event), `Response order: ${first} / ${second}`, `Reported score: ${str(result.score, 'result.score')}`, `Sets supplied: ${sets.length}`];
   let games = 0, entries = 0, empty = 0;
-  const records: GameRecord[] = [];
   sets.forEach((value, si) => {
     const set = obj(value, `sets[${si}]`); num(set.setNumber, 'setNumber'); str(set.setScore, 'setScore');
     list(set.games, 'games').forEach((value, gi) => {
@@ -48,14 +48,14 @@ export function inspectPoints(payload: unknown, event: LiveEvent): string {
       if (typeof game.tiebreak !== 'boolean') return fail('tiebreak');
       num(game.gameNumber, 'gameNumber'); str(game.finalScore, 'finalScore');
       const content = str(game.fifteens_content, 'fifteens_content');
-      records.push({ set: Number(set.setNumber), game: Number(game.gameNumber), server, tiebreak: game.tiebreak as boolean, finalScore: String(game.finalScore), content });
       const scores = content.split(',').map(s => s.trim()).filter(Boolean);
       games++; entries += scores.length; if (!scores.length) empty++;
       if (lines.length < 15) lines.push(`Set ${set.setNumber}, game ${game.gameNumber}: server=${server === 0 ? 'unknown' : server === 1 ? first : second}; tiebreak=${game.tiebreak}; final=${game.finalScore}; sequence=${content || '(empty)'}`);
     });
   });
   lines.push(`Games supplied: ${games}; nonempty comma-separated score entries: ${entries}; empty game sequences: ${empty}.`, 'Entries are raw score records, not verified complete points. Gaps, corrections, terminal-point encoding and tiebreak notation still need verification.');
-  lines.push(formatGameAnalysis(analyzeGames(records)));
+  const snapshot = adaptMatchstatPoints(payload, event.matchKey ?? event.matchId ?? event.eventId);
+  lines.push(formatGameAnalysis(analyzeGames(snapshot.games)));
   return lines.join('\n');
 }
 export function inspectStatistics(payload: unknown, event: LiveEvent): string {
@@ -130,14 +130,7 @@ export async function validateLiveMatch(key: string | undefined, filters: LiveFi
 
 function compareResponses(points: unknown, timeline: unknown): string {
   const root = obj(points, 'points'); const meta = obj(root.meta, 'meta');
-  const records: GameRecord[] = [];
-  for (const setValue of list(obj(root.result, 'result').sets, 'sets')) {
-    const set = obj(setValue, 'set');
-    for (const gameValue of list(set.games, 'games')) {
-      const game = obj(gameValue, 'game');
-      records.push({ set: num(set.setNumber, 'setNumber'), game: num(game.gameNumber, 'gameNumber'), server: num(game.server, 'server'), tiebreak: game.tiebreak as boolean, finalScore: str(game.finalScore, 'finalScore'), content: str(game.fifteens_content, 'content') });
-    }
-  }
+  const snapshot = adaptMatchstatPoints(points, 'validation-match');
   const texts = list(obj(timeline, 'timeline').results, 'results').map(v => str(obj(v, 'row').text, 'text'));
-  return crossCheckTimeline(analyzeGames(records), texts, [name(meta.player1, 'player1'), name(meta.player2, 'player2')]);
+  return crossCheckTimeline(analyzeGames(snapshot.games), texts, [name(meta.player1, 'player1'), name(meta.player2, 'player2')]);
 }
