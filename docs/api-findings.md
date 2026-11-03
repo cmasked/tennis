@@ -206,3 +206,17 @@ basis. Snapshot reconciliation exposes additions, updates and retractions rather
 than repeatedly appending commentary. Duplicate game records withhold moments
 for the affected game. This is not durable deduplication or an ingestion ordering
 guarantee. See offline-replay.md for tested scenarios and deferred capabilities.
+
+## Explicit-format point scoring
+
+A separate canonical engine now consumes ordered point winners, with an explicit
+bestOf, advantage/no-ad mode, and regular/deciding tiebreak rules. Offline tests
+cover deuce, set/match-point creation and saves, set/match completion, 7-5 sets,
+advantage sets without tiebreaks, seven/ten-point tiebreaks requiring a two-point
+margin, service rotation, next-set serving, and best-of-three/five match length.
+
+This does not establish provider tiebreak parsing. Existing provider-score history
+continues to withhold unsupported tiebreak strings; canonical scenarios use known
+synthetic point winners without fabricating missing real points. The scoring core
+has no network calls. Standalone match tiebreaks replacing sets and doubles
+receiving-side rules remain outside the current engine.

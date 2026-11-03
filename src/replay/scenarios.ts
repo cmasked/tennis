@@ -15,5 +15,5 @@ export const scenarios: { title: string; snapshot: MatchSnapshot }[] = [
   { title: 'Corrected game three: previous break must be retracted', snapshot: base([first, saved, hold(3, 1, '2-1', '15:0,30:0,40:0')]) },
   { title: 'Gap in game four: hold known, missing points remain unknown', snapshot: base([first, saved, hold(3, 1, '2-1', '15:0,30:0,40:0'), hold(4, 2, '2-2', '0:15,0:40')]) },
   { title: 'Separate incomplete history: cannot invent games one and two', snapshot: { ...base([hold(3, 1, '2-1', '15:0,30:0,40:0')]), matchKey: 'synthetic-missing-games' } },
-  { title: 'Separate tiebreak sample: unsupported point reconstruction stays explicit', snapshot: { ...base([{ ...hold(1, 1, '', '*1:0,1:1'), tiebreak: true }]), matchKey: 'synthetic-tiebreak' } },
+  { title: 'Provider-shaped tiebreak sample: unverified string reconstruction stays explicit', snapshot: { ...base([{ ...hold(1, 1, '', '*1:0,1:1'), tiebreak: true }]), matchKey: 'synthetic-tiebreak' } },
 ];

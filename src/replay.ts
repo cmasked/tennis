@@ -1,3 +1,4 @@
+import { replayFormats } from './replay/formats.ts';
 import { buildMoments, reconcileMoments, type MatchMoment } from './engine/moments.ts';
 import { scenarios } from './replay/scenarios.ts';
 if (process.argv.length !== 2) {
@@ -18,5 +19,6 @@ if (process.argv.length !== 2) {
     if (!changes.added.length && !changes.updated.length && !changes.removed.length) console.log('  No changes; no duplicate commentary.');
     previous = moments;
   });
-  console.log('\nScope: ordinary advantage games, deterministic moments and snapshot corrections. Set/match points, tiebreak rules, persistent deduplication and live delivery are not implemented.');
+  console.log(replayFormats());
+  console.log('\nScope: ordinary advantage games, deterministic moments and snapshot corrections. Explicit-format set/match points and canonical tiebreak rules are demonstrated separately. Provider tiebreak adaptation, persistent deduplication and live delivery remain unimplemented.');
 }

@@ -32,7 +32,11 @@ those for this review.
 | 5: corrected snapshot | Previous Jordan break is retracted; Alex hold replaces it |
 | 6: missing point | Game result can establish a hold, but point gap is flagged; missing points are not invented |
 | 7: incomplete game history | Outcome withheld because earlier games are missing |
-| 8: tiebreak | Unsupported reconstruction is flagged explicitly |
+| 8: provider-shaped tiebreak | Unsupported provider-string reconstruction is flagged explicitly |
+| 9: set point | At 5-0 and 40-0, player 1 has set point but not match point; player 2 saves one |
+| 10: match point | With a set lead, the winning point emits game, set and match wins |
+| 11: seven-point tiebreak | Service sequence starts 1,2,2,1,1,2,2; 7-6 is not enough; 8-6 wins |
+| 12: deciding-set format | Best-of-five fifth-set tiebreak targets ten points, not seven |
 
 The replay prints snapshots immediately in sequence; it does not animate or wait
 between points. Review whether each explanation is clear and whether corrections
@@ -63,10 +67,26 @@ both paths plus the actual CLI with fetch disabled and an empty key.
 
 ## Limits
 
-This increment does not implement set/match-point detection, set/match winners,
-comeback ranking, tiebreak rules, no-ad formats, persistence, stale-snapshot
-rejection, or production notification delivery. Scoring format selection must
-be explicit before these are added. Statistics schema differences remain open.
+The canonical point engine now supports explicit best-of-three/five formats,
+advantage and no-ad games, sets won by a two-game margin, configurable regular
+and deciding-set tiebreaks, and advantage sets with no tiebreak. Scoring formats
+are passed explicitly; tournament names are never used to infer them.
+
+`src/engine/point-engine.ts` consumes complete, ordered point winners (1 or 2).
+It emits structured point/game/set/match wins and pressure-created/saved events.
+`pressureFor` looks ahead one legal point to determine break/set/match point.
+`src/replay/formats.ts` demonstrates this input path using synthetic point winners.
+
+This is separate from the existing provider-score snapshot input. We have not
+validated the provider's full tiebreak score-string grammar or mapped partial
+histories into the canonical point stream. Scenario 8 intentionally continues
+to withhold that reconstruction, while scenarios 9–12 test the rules directly.
+Never invent point winners to bridge a missing history merely to feed this engine.
+
+Comeback ranking, standalone match tiebreaks replacing a set, persistence,
+stale-snapshot rejection and production notification delivery remain unimplemented.
+Doubles receiving-side selection at a no-ad deciding point is not modeled; the
+engine only scores a supplied winner. Statistics schema differences remain open.
 
 The engine may know a game outcome from adjacent game scores even if intermediate
 points are missing. It can only state break-point saves observed in the valid

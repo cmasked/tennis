@@ -16,7 +16,11 @@ npm run replay
 
 Replay uses clearly labeled synthetic snapshots and requires no key. It shows
 holds, breaks, saved break points, duplicate suppression, corrections/retractions,
-and explicit uncertainty. See [the offline review guide](docs/offline-replay.md)
+and explicit uncertainty. Additional scenarios demonstrate explicit best-of-three/
+five formats, set/match points, saved pressure points, and seven/ten-point
+tiebreak rules with service rotation. These canonical point-winner scenarios
+do not claim that provider tiebreak strings are already supported.
+See [the offline review guide](docs/offline-replay.md)
 for expected output, important files, and current limitations. You do not need
 to run any `api:*` command to review this increment.
 
