@@ -77,11 +77,11 @@ It emits structured point/game/set/match wins and pressure-created/saved events.
 `pressureFor` looks ahead one legal point to determine break/set/match point.
 `src/replay/formats.ts` demonstrates this input path using synthetic point winners.
 
-This is separate from the existing provider-score snapshot input. We have not
-validated the provider's full tiebreak score-string grammar or mapped partial
-histories into the canonical point stream. Scenario 8 intentionally continues
-to withhold that reconstruction, while scenarios 9–12 test the rules directly.
-Never invent point winners to bridge a missing history merely to feed this engine.
+The provider's full real-world tiebreak score-string grammar is not yet validated.
+Scenario 8 preserves the older per-game analyzer's conservative behavior;
+scenarios 9–12 test the rules directly, and scenarios 13–15 exercise the new
+provider-history bridge using documentation-based synthetic payloads. The bridge
+stops at missing points rather than filling them in.
 
 Comeback ranking, standalone match tiebreaks replacing a set, persistence,
 stale-snapshot rejection and production notification delivery remain unimplemented.
@@ -92,3 +92,39 @@ The engine may know a game outcome from adjacent game scores even if intermediat
 points are missing. It can only state break-point saves observed in the valid
 score prefix, hence "at least". Omitted terminal points are labeled reconstructed
 in scoring analysis; no invented point-level timing or shot labels are produced.
+
+## Provider-history bridge (scenarios 13–15)
+
+The next replay batch exercises synthetic provider-shaped responses through the
+actual adapter and `src/engine/history.ts`, rather than only the scoring rules.
+It covers a complete two-set match with omitted terminal records, a missing point
+that stops reconstruction, and documented numeric tiebreak strings with the
+explicitly documented player-1 `*` prefix. Other star placements remain rejected.
+This is documentation-based support, not a claim that real tiebreak payloads have
+been observed.
+
+The bridge requires a full history starting at set 1/game 1 with a known first
+server and explicit format. It checks game numbering, legal service order,
+tiebreak flags and game outcomes. It follows a score transition only if exactly
+one legal next point matches. It reconstructs a missing terminal only when one
+legal point finishes the game at exactly the reported game score. Gaps, duplicate
+records, incompatible final scores, or unsupported notation stop the prefix;
+no later set/match result is invented. Missing history can still be inspected by
+the earlier per-game analysis, without pretending it is a full point stream.
+
+Moments have stable match/set/game/point identities and carry recorded versus
+reconstructed evidence. Applying the same authoritative input produces the same
+moments. Production ingestion ordering and durable retractions remain future work.
+
+The same bridge is available in a future bundled live check:
+
+```powershell
+npm run api:validate -- --tour atp --format standard-bo3
+```
+
+This reuses the already fetched point response; the total budget remains **at most
+four requests**, not a fifth request. Choose the actual match format explicitly;
+`slam-men` selects best-of-five men's Grand Slam main-draw singles rules. The
+command's selection filters do not independently verify singles/doubles or format.
+Without `--format`, existing per-game inspection still works, but no full-history
+pressure reconstruction runs. A stopped bridge counts as a failed check.

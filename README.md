@@ -219,3 +219,22 @@ Offline verification consumes no tennis API quota:
 npm test
 npm run typecheck
 ```
+
+### Bundled format-aware live check (when needed)
+
+```powershell
+npm run api:validate -- --tour atp --format standard-bo3
+```
+
+This adds full-history scoring to the same four-request maximum, reusing the PBP
+response. It checks legal score transitions, game order, service order, set/match
+pressure and results, and marks reconstructed terminal points. Inconsistent or
+partial histories stop the prefix and count as a failed check. Missing histories
+are not filled in. Real tiebreak encoding still needs validation; only documented
+numeric notation and the player-1 prefix marker are supported provisionally.
+
+Choose the actual format: `standard-bo3` or `slam-men`. Neither tournament names
+nor tour membership prove a format; automatic discovery does not verify that a
+selected event is singles. Use tournament filtering appropriately and review the
+selected match. No new request is needed to review synthetic replay scenarios
+13–15 first. You do not need to send a transcript of every passing offline run.

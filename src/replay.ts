@@ -1,3 +1,4 @@
+import { replayProviderBridge } from './replay/provider.ts';
 import { replayFormats } from './replay/formats.ts';
 import { buildMoments, reconcileMoments, type MatchMoment } from './engine/moments.ts';
 import { scenarios } from './replay/scenarios.ts';
@@ -20,5 +21,6 @@ if (process.argv.length !== 2) {
     previous = moments;
   });
   console.log(replayFormats());
-  console.log('\nScope: ordinary advantage games, deterministic moments and snapshot corrections. Explicit-format set/match points and canonical tiebreak rules are demonstrated separately. Provider tiebreak adaptation, persistent deduplication and live delivery remain unimplemented.');
+  console.log(replayProviderBridge());
+  console.log('\nScope: ordinary advantage games, deterministic moments and snapshot corrections. Explicit-format set/match points and canonical tiebreak rules are demonstrated separately. Conservative provider-history reconstruction is now tested synthetically. Real tiebreak encoding, persistent deduplication and live delivery remain unverified or unimplemented.');
 }

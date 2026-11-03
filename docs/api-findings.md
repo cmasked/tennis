@@ -220,3 +220,21 @@ continues to withhold unsupported tiebreak strings; canonical scenarios use know
 synthetic point winners without fabricating missing real points. The scoring core
 has no network calls. Standalone match tiebreaks replacing sets and doubles
 receiving-side rules remain outside the current engine.
+
+## Bundled provider-to-engine validation
+
+Synthetic replay scenarios 13–15 now pass provider-shaped histories through the
+same adapter and full-history bridge used by `api:validate --format ...`.
+Documented numeric tiebreak scores and prefix player-1 service markers are
+supported conservatively and tested synthetically; other placements are rejected.
+Real tiebreak samples remain unobserved. The bridge refuses to reconstruct through
+point/game gaps, wrong service order, format conflicts or duplicate/corrected
+score steps. It requires start-of-match history and labels reconstructed terminal
+points explicitly. Future snapshots must be recomputed to handle corrections;
+this module does not accept stale snapshot sequencing as authoritative.
+
+Format-aware analysis reuses the single point-history response, keeping the
+combined live check at at most four calls. Offline tests now cover this integration
+and ensure a stopped bridge is counted as a failed validation check. No real API
+requests were made to implement it. Statistics differences still await the safe
+shape output from a future bundled real-data run.

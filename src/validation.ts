@@ -1,3 +1,5 @@
+import { reconstructHistory, formatHistory } from './engine/history.ts';
+import type { ScoringFormat } from './engine/point-engine.ts';
 import { adaptMatchstatPoints } from './adapters/matchstat-points.ts';
 import { analyzeGames, formatGameAnalysis, crossCheckTimeline } from './scoring.ts';
 import { describeShape } from './diagnostics.ts';
@@ -90,7 +92,7 @@ export function inspectTimeline(payload: unknown): string {
   const texts = rows.map((value, i) => { const item = obj(value, `timeline[${i}]`); str(item.id, 'timeline.id'); return str(item.text, 'timeline.text'); });
   return [`Timeline entries supplied: ${rows.length}.`, ...texts.slice(-12), 'Provider text only; hold/break meaning has not been independently reconstructed.'].join('\n');
 }
-export async function validateLiveMatch(key: string | undefined, filters: LiveFilters = {}, request: typeof fetch = fetch, log: (s: string) => void = () => {}) {
+export async function validateLiveMatch(key: string | undefined, filters: LiveFilters & { format?: ScoringFormat } = {}, request: typeof fetch = fetch, log: (s: string) => void = () => {}) {
   let calls = 0;
   const counted: typeof fetch = async (url, options) => { calls++; return request(url, options); };
   log('Request budget: at most 4 (1 live discovery + point history + statistics + timeline). No retries or polling.');
@@ -113,7 +115,20 @@ export async function validateLiveMatch(key: string | undefined, filters: LiveFi
     try {
       payload = await fetchProviderJson(url, key, counted);
       log(`\n${label}\n${inspect(payload)}`);
-      if (label === 'POINT HISTORY') pointsPayload = payload;
+      if (label === 'POINT HISTORY') {
+        pointsPayload = payload;
+        if (filters.format) {
+          const snapshot = adaptMatchstatPoints(payload, event.matchKey ?? event.matchId ?? event.eventId);
+          const agreement = identity(snapshot.players[0], snapshot.players[1], event);
+          if (agreement.startsWith('WARNING')) { failures++; log('FORMAT-AWARE HISTORY withheld: player identity mismatch.'); }
+          else {
+            log(`Explicit format: best-of-${filters.format.bestOf}, ${filters.format.gameMode}.`);
+            const history = reconstructHistory(snapshot, filters.format);
+            log(formatHistory(history, snapshot.players));
+            if (history.stopped) failures++;
+          }
+        } else log('FORMAT-AWARE HISTORY not run: supply --format standard-bo3 or slam-men explicitly.');
+      }
       if (label === 'TIMELINE' && pointsPayload) log(compareResponses(pointsPayload, payload));
     }
     catch (error) {
