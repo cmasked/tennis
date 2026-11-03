@@ -4,12 +4,12 @@ import { parseLiveEvents, parseLiveOptions, formatLiveEvents } from '../src/live
 const now = Date.parse('2026-11-04T12:00:00Z');
 // Synthetic data matching observed field shapes, not recorded provider data.
 function sample() {
-  return { success: true, results: [{ id: '100', matchId: '1-2-3-4', participant1: 'Test A', participant2: 'Test B', league: 'Synthetic Paris', tourType: 'atp', status: 'InPlay', score: '6-3,2-1', points: '30-40', indicator: '1,0', updatedAt: now - 30000, matchKey: 'ignored', unexpected: true }] };
+  return { success: true, results: [{ id: '100', matchId: '1-2-3-4', participant1: 'Test A', participant2: 'Test B', league: 'Synthetic Paris', tourType: 'atp', status: 'InPlay', score: '6-3,2-1', points: '30-40', indicator: '1,0', updatedAt: now - 30000, matchKey: '1-2-3-4', unexpected: true }] };
 }
 test('normalizes observed fields and preserves distinct identifiers', () => {
   const events = parseLiveEvents(sample());
   assert.equal(events[0].eventId, '100'); assert.equal(events[0].matchId, '1-2-3-4');
-  assert.equal(events[0].points, '30-40'); assert.equal('matchKey' in events[0], false);
+  assert.equal(events[0].points, '30-40'); assert.equal(events[0].matchKey, '1-2-3-4'); assert.equal('unexpected' in events[0], false);
 });
 test('renders readable scores with freshness and no invented server or history', () => {
   const output = formatLiveEvents(parseLiveEvents(sample()), {}, now, 'UTC');

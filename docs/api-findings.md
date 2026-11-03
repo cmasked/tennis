@@ -129,3 +129,40 @@ cloud CONNECT proxy on this setup. This is documentation-access evidence, not a
 tennis API permission failure. No point-history endpoint was guessed or called.
 We need accessible official documentation or its exact route/parameters before
 adding that request. No provider API quota was consumed during this update.
+
+## Supplied provider reference: point history and supporting feeds
+
+The founder supplied endpoint reference text defining these routes:
+
+- `/tennis/v2/extend/api/event/pbp/{player1Id}/{player2Id}/{tournamentId}/{roundId}`
+- `/tennis/v2/extend/api/event/get/statistics/{eventId}`
+- `/tennis/v2/extend/api/event/timeline/{eventId}`
+
+This supplies the route information previously blocked by cloud documentation
+access. It is documentation evidence; real detail responses remain unverified.
+The compound `matchKey` provides the four PBP identifiers. `matchId` is documented
+as a deprecated alias scheduled for removal on 3 December 2026; prefer matchKey.
+The numeric-looking live `id` is used for statistics/timeline, not the fixture ID.
+
+Point history is documented as `meta` plus `result.sets[].games[]`, with server
+0/1/2, tiebreak boolean, game number, final score and `fifteens_content` strings.
+The latter contains comma-separated score records, BP markers and tiebreak
+serving markers; complete grammar, terminal-point encoding, completeness and
+corrections still need real-data validation. Server 1/2 refers to returned PBP
+player order. Do not apply that meaning to the discovery feed's indicator.
+
+Statistics are documented by period/category/metric/player, with numeric value
+and optional total/percentage. They may contain whole-match totals only.
+Timeline supplies ordered text rows, not structured authoritative hold/break
+facts reconstructed by our own engine. Coverage/retention can vary.
+
+`api:validate` now requests all three for one selected provider InPlay event,
+preceded by one discovery call. Synthetic tests cover exact request accounting,
+identifier routing, preferred matchKey, null/no-match behavior, player-order
+preservation, malformed schemas and early termination on HTTP 401/403/429.
+It reports samples and whole-response counts but does not persist real provider
+data or claim engine readiness. No API quota was spent in implementation.
+
+Scoring rules must remain explicit: Grand Slam men's main-draw singles are
+best-of-five; women's singles are best-of-three. Tournament label alone is not
+enough to infer format across qualifying, doubles and special competitions.

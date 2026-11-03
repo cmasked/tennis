@@ -141,3 +141,30 @@ rather than scores; missing/empty data does not establish lack of API coverage.
 We will inspect actual fields before implementing score or point-history parsing.
 An invalid ID or missing key fails without an API request. This inspector does
 not save provider data to disk. The same backend-only key from `.env` is used.
+
+## Validate discovery, point history, statistics and timeline together
+
+```powershell
+cd D:\tennis\tennis
+git pull origin main
+npm run api:validate -- --tour atp
+```
+
+**At most four API requests per invocation**: one live discovery, then three
+detail requests for one provider-reported InPlay event. The tool prefers the most
+recent provider update timestamp among matching events with usable identifiers.
+Add `--tournament Paris` to restrict selection; it never falls back to a different
+tournament. If no matching event is found, it stops after one request. Missing
+credentials fail before any request. Access/quota errors stop remaining detail
+requests. There are no retries, polling, additional pages or disk recordings.
+
+It reports documented-schema checks, response player ordering/name agreement,
+raw per-game point score sequences (first sample games), game/sequence counts,
+statistics metrics (sample), and the last 12 timeline texts. Counts cover the
+entire fetched payload even when displayed examples are limited. This is an
+inspection command: comma-separated score entries are not yet interpreted as
+complete points or used to announce tennis events. Gaps and partial coverage
+remain possible. Empty sections are shown as zero, not hidden as successful
+coverage. Schema failures mark the run failed while independent sections are
+still checked; compare the output before deciding whether this provider meets
+our engine's requirements. No credentials or raw response files are saved.

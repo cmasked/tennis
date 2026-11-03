@@ -2,6 +2,7 @@
 export interface LiveEvent {
   eventId: string;
   matchId: string | null;
+  matchKey: string | null;
   player1: string;
   player2: string;
   tournament: string;
@@ -38,6 +39,7 @@ export function parseLiveEvents(value: unknown): LiveEvent[] {
     return {
       eventId: text(item.id, `${path}.id`),
       matchId: optionalText(item.matchId, `${path}.matchId`),
+      matchKey: optionalText(item.matchKey, `${path}.matchKey`),
       player1: text(item.participant1, `${path}.participant1`),
       player2: text(item.participant2, `${path}.participant2`),
       tournament: text(item.league, `${path}.league`),
