@@ -59,3 +59,15 @@ test('empty history/statistics/timeline remain explicit and malformed metrics fa
   assert.match(inspectTimeline({ success: true, results: [] }), /entries supplied: 0/);
   assert.throws(() => inspectStatistics({ ...statistics(), statistics: { ALL: { service: { aces: { player1: { value: 'bad' } } } } } }, event()), /value/);
 });
+
+test('unexpected statistics nesting emits safe diagnostics without an extra request', async () => {
+  const payloads = [discovery(), points(), { success: true, results: [{ message: 'PRIVATE-VALUE', player1: null }] }, timeline];
+  const logs: string[] = [];
+  const result = await validateLiveMatch('dummy', {}, async () => new Response(JSON.stringify(payloads.shift())), s => logs.push(s));
+  assert.equal(result.calls, 4); assert.equal(result.failures, 1);
+  const output = logs.join('\n');
+  assert.match(output, /STATISTICS: FAILED/);
+  assert.match(output, /response.results\[0\].player1: null/);
+  assert.doesNotMatch(output, /PRIVATE-VALUE/);
+  assert.match(output, /TIMELINE CROSS-CHECK/);
+});

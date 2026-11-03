@@ -1,3 +1,5 @@
+import { analyzeGames, formatGameAnalysis, crossCheckTimeline, type GameRecord } from './scoring.ts';
+import { describeShape } from './diagnostics.ts';
 import { API_HOST, fetchProviderJson } from './client.ts';
 import { fetchLiveEvents } from './live-inspector.ts';
 import { parseLiveEvents, type LiveEvent, type LiveFilters } from './live-events.ts';
@@ -36,6 +38,7 @@ export function inspectPoints(payload: unknown, event: LiveEvent): string {
   const sets = list(result.sets, 'result.sets');
   const lines = [identity(first, second, event), `Response order: ${first} / ${second}`, `Reported score: ${str(result.score, 'result.score')}`, `Sets supplied: ${sets.length}`];
   let games = 0, entries = 0, empty = 0;
+  const records: GameRecord[] = [];
   sets.forEach((value, si) => {
     const set = obj(value, `sets[${si}]`); num(set.setNumber, 'setNumber'); str(set.setScore, 'setScore');
     list(set.games, 'games').forEach((value, gi) => {
@@ -45,12 +48,14 @@ export function inspectPoints(payload: unknown, event: LiveEvent): string {
       if (typeof game.tiebreak !== 'boolean') return fail('tiebreak');
       num(game.gameNumber, 'gameNumber'); str(game.finalScore, 'finalScore');
       const content = str(game.fifteens_content, 'fifteens_content');
+      records.push({ set: Number(set.setNumber), game: Number(game.gameNumber), server, tiebreak: game.tiebreak as boolean, finalScore: String(game.finalScore), content });
       const scores = content.split(',').map(s => s.trim()).filter(Boolean);
       games++; entries += scores.length; if (!scores.length) empty++;
       if (lines.length < 15) lines.push(`Set ${set.setNumber}, game ${game.gameNumber}: server=${server === 0 ? 'unknown' : server === 1 ? first : second}; tiebreak=${game.tiebreak}; final=${game.finalScore}; sequence=${content || '(empty)'}`);
     });
   });
   lines.push(`Games supplied: ${games}; nonempty comma-separated score entries: ${entries}; empty game sequences: ${empty}.`, 'Entries are raw score records, not verified complete points. Gaps, corrections, terminal-point encoding and tiebreak notation still need verification.');
+  lines.push(formatGameAnalysis(analyzeGames(records)));
   return lines.join('\n');
 }
 export function inspectStatistics(payload: unknown, event: LiveEvent): string {
@@ -98,19 +103,41 @@ export async function validateLiveMatch(key: string | undefined, filters: LiveFi
   log(`Selected: ${event.player1} vs ${event.player2} | ${event.tournament} | ${event.tour}\nEvent ID: ${event.eventId} | Match key: ${event.matchKey ?? event.matchId}\nProvider updatedAt: ${event.updatedAt === null ? 'unknown' : new Date(event.updatedAt).toISOString()}. InPlay and freshness are provider claims.`);
   const urls = detailUrls(event);
   let failures = 0;
+  let pointsPayload: unknown;
   for (const [label, url, inspect] of [
     ['POINT HISTORY', urls.points, (p: unknown) => inspectPoints(p, event)],
     ['STATISTICS', urls.statistics, (p: unknown) => inspectStatistics(p, event)],
     ['TIMELINE', urls.timeline, inspectTimeline],
   ] as const) {
-    try { const payload = await fetchProviderJson(url, key, counted); log(`\n${label}\n${inspect(payload)}`); }
+    let payload: unknown;
+    try {
+      payload = await fetchProviderJson(url, key, counted);
+      log(`\n${label}\n${inspect(payload)}`);
+      if (label === 'POINT HISTORY') pointsPayload = payload;
+      if (label === 'TIMELINE' && pointsPayload) log(compareResponses(pointsPayload, payload));
+    }
     catch (error) {
       failures++;
       const message = error instanceof Error ? error.message : 'Unexpected failure';
       log(`\n${label}: FAILED — ${message}`);
+      if (payload !== undefined) log(describeShape(payload));
       if (/HTTP (401|403|429)/.test(message)) { log('Stopped to avoid further requests after access/quota failure.'); break; }
     }
   }
   log(`\nRequests made: ${calls}. Failed checks: ${failures}. This run does not establish latency, completeness, correction handling, licensing, or engine readiness.`);
   return { calls, failures, selected: true };
+}
+
+function compareResponses(points: unknown, timeline: unknown): string {
+  const root = obj(points, 'points'); const meta = obj(root.meta, 'meta');
+  const records: GameRecord[] = [];
+  for (const setValue of list(obj(root.result, 'result').sets, 'sets')) {
+    const set = obj(setValue, 'set');
+    for (const gameValue of list(set.games, 'games')) {
+      const game = obj(gameValue, 'game');
+      records.push({ set: num(set.setNumber, 'setNumber'), game: num(game.gameNumber, 'gameNumber'), server: num(game.server, 'server'), tiebreak: game.tiebreak as boolean, finalScore: str(game.finalScore, 'finalScore'), content: str(game.fifteens_content, 'content') });
+    }
+  }
+  const texts = list(obj(timeline, 'timeline').results, 'results').map(v => str(obj(v, 'row').text, 'text'));
+  return crossCheckTimeline(analyzeGames(records), texts, [name(meta.player1, 'player1'), name(meta.player2, 'player2')]);
 }

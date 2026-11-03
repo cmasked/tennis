@@ -168,3 +168,34 @@ remain possible. Empty sections are shown as zero, not hidden as successful
 coverage. Schema failures mark the run failed while independent sections are
 still checked; compare the output before deciding whether this provider meets
 our engine's requirements. No credentials or raw response files are saved.
+
+### Scoring analysis in the combined validator
+
+`api:validate` also analyzes ordinary advantage games using the returned point
+sequences and game-score progression. It reports holds/breaks where the game
+winner and server are known, verified adjacent score transitions, break points
+saved within the verified prefix, BP marker disagreements, and possible omitted
+finishing points. A terminal point is labeled `reconstructed` only when the game
+result supplies a winner and exactly one legal next point for that winner would
+finish the game. It is never labeled as a directly observed feed point.
+
+After gaps, duplicate scores, corrections or unsupported notation, further point
+attribution is withheld. Game-score gaps prevent winner attribution. Tiebreak
+point reconstruction is explicitly deferred; no default tiebreak format is
+assumed. This is a scoring foundation, not a complete live engine.
+
+Supported timeline hold/break text is cross-checked against derived game results.
+Disagreements and unrecognized text remain visible; timeline text is not used to
+silently override point history. Histories with game-order gaps withhold alignment.
+
+If statistics (or another detail response) fails schema validation, the command
+prints a bounded field/type tree without scalar values. This allows us to debug
+response nesting without saving raw data or spending additional requests. Such
+checks still count as failed. The request budget remains at most four.
+
+Offline verification consumes no tennis API quota:
+
+```powershell
+npm test
+npm run typecheck
+```

@@ -166,3 +166,31 @@ data or claim engine readiness. No API quota was spent in implementation.
 Scoring rules must remain explicit: Grand Slam men's main-draw singles are
 best-of-five; women's singles are best-of-three. Tournament label alone is not
 enough to infer format across qualifying, doubles and special competitions.
+
+## First combined user-run validation
+
+A user-run match returned PBP player names consistent with discovery, three
+sets, 19 game records, and 112 comma-separated score entries. Timeline returned
+18 rows. This is evidence of accessible PBP/timeline coverage for that match,
+not a general coverage guarantee. The final game's contents were not shown in
+the provided excerpt; an ongoing nineteenth game remains a hypothesis.
+
+Completed games in the supplied output ended their sequences at nonterminal
+scores such as 40:15 while finalScore advanced. This supports an omitted-finishing-
+point encoding hypothesis. The scoring foundation now labels a finishing point
+as reconstructed only if a valid recorded sequence plus game-score winner permits
+exactly that winner to finish on the next point. It never fills arbitrary gaps.
+Ordinary game deuce/advantage scoring and computed break-point saves are tested;
+tiebreak reconstruction remains explicitly deferred pending format/examples.
+
+Statistics failed at the expected top-level player1 path. This does not establish
+that statistics are unavailable: the actual response shape was not previously
+printed. The validator now emits a bounded schema tree on parsing failures with
+field names/types but no scalar values, preserving the failure status.
+
+Timeline cross-checks support the observed "Game N - Name - holds/breaks to X"
+wording, reporting mismatches and unsupported rows without overriding scoring.
+These are consistency checks with limited alignment assumptions, not evidence
+of live freshness or complete scoring history. Documentation licensing questions,
+correction handling across snapshots, tiebreaks and match-format selection remain
+open before a reliable production engine can be claimed.
