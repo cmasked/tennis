@@ -23,20 +23,20 @@ those for this review.
 
 ## What to check
 
-| Replay step | Expected result |
-| --- | --- |
-| 1: ordinary game | Alex holds at 1-0 |
-| 2: pressure/deuce | Jordan saves at least three break points and holds for 1-1 |
-| 3: break | Jordan breaks Alex for 1-2 in Alex-first score order |
-| 4: repeated snapshot | No new commentary |
-| 5: corrected snapshot | Previous Jordan break is retracted; Alex hold replaces it |
-| 6: missing point | Game result can establish a hold, but point gap is flagged; missing points are not invented |
-| 7: incomplete game history | Outcome withheld because earlier games are missing |
-| 8: provider-shaped tiebreak | Unsupported provider-string reconstruction is flagged explicitly |
-| 9: set point | At 5-0 and 40-0, player 1 has set point but not match point; player 2 saves one |
-| 10: match point | With a set lead, the winning point emits game, set and match wins |
-| 11: seven-point tiebreak | Service sequence starts 1,2,2,1,1,2,2; 7-6 is not enough; 8-6 wins |
-| 12: deciding-set format | Best-of-five fifth-set tiebreak targets ten points, not seven |
+| Replay step                 | Expected result                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| 1: ordinary game            | Alex holds at 1-0                                                                           |
+| 2: pressure/deuce           | Jordan saves at least three break points and holds for 1-1                                  |
+| 3: break                    | Jordan breaks Alex for 1-2 in Alex-first score order                                        |
+| 4: repeated snapshot        | No new commentary                                                                           |
+| 5: corrected snapshot       | Previous Jordan break is retracted; Alex hold replaces it                                   |
+| 6: missing point            | Game result can establish a hold, but point gap is flagged; missing points are not invented |
+| 7: incomplete game history  | Outcome withheld because earlier games are missing                                          |
+| 8: provider-shaped tiebreak | Unsupported provider-string reconstruction is flagged explicitly                            |
+| 9: set point                | At 5-0 and 40-0, player 1 has set point but not match point; player 2 saves one             |
+| 10: match point             | With a set lead, the winning point emits game, set and match wins                           |
+| 11: seven-point tiebreak    | Service sequence starts 1,2,2,1,1,2,2; 7-6 is not enough; 8-6 wins                          |
+| 12: deciding-set format     | Best-of-five fifth-set tiebreak targets ten points, not seven                               |
 
 The replay prints snapshots immediately in sequence; it does not animate or wait
 between points. Review whether each explanation is clear and whether corrections

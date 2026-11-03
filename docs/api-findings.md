@@ -18,15 +18,15 @@ number of rows returned on the page. Neither value establishes current coverage.
 
 Observed match fields:
 
-| Field | Observed shape | Use |
-| --- | --- | --- |
-| `id`, `matchId` | Integer | Keep separately; equality in one row does not establish equivalence |
-| `liveMatchId` | String | Distinct live identifier, not interchangeable with fixture IDs |
-| `player1`, `player2` | Objects with integer `id` and string `name` | Display participants |
-| `tournament` | Object with integer `id` and string `name` | Display tournament |
-| `date` | ISO timestamp with UTC suffix | Scheduled time, converted to viewer's local timezone |
-| `court` | String, observed `I.hard` | Display provider label without guessing mappings |
-| `links.match`, `links.live` | Relative URLs with `type` and `source` query parameters | Candidate documented lookup routes; not yet exercised |
+| Field                       | Observed shape                                          | Use                                                                 |
+| --------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------- |
+| `id`, `matchId`             | Integer                                                 | Keep separately; equality in one row does not establish equivalence |
+| `liveMatchId`               | String                                                  | Distinct live identifier, not interchangeable with fixture IDs      |
+| `player1`, `player2`        | Objects with integer `id` and string `name`             | Display participants                                                |
+| `tournament`                | Object with integer `id` and string `name`              | Display tournament                                                  |
+| `date`                      | ISO timestamp with UTC suffix                           | Scheduled time, converted to viewer's local timezone                |
+| `court`                     | String, observed `I.hard`                               | Display provider label without guessing mappings                    |
+| `links.match`, `links.live` | Relative URLs with `type` and `source` query parameters | Candidate documented lookup routes; not yet exercised               |
 
 The adapter validates the required fields above and ignores additional fields.
 Missing/null schedule, surface, and live ID are represented as unknown. Wrong
@@ -97,18 +97,18 @@ The founder's successful `api:live-list` output established an envelope of
 The redacted terminal output was truncated by our old display limit; no complete
 feed count can be established from that excerpt.
 
-| Observed field | Shape | Interpretation / limits |
-| --- | --- | --- |
-| `id` | String | Live event identifier; not the numeric ATP fixture ID |
-| `matchId` | Compound string | Distinct identifier, retained without interpreting its components |
-| `participant1`, `participant2` | Strings | Player display names |
-| `league`, `tourType` | Strings | Tournament label and tour dataset |
-| `status` | String, observed `InPlay` | Provider claim, not independent confirmation of current play |
-| `score` | String or null | Raw reported score, not yet parsed into tennis state |
-| `points` | String or null | Current game score such as `30-40`, not a point history |
-| `indicator` | String or null | Meaning unverified; not mapped to a server |
-| `updatedAt` | Integer, millisecond-scale | Displayed as epoch milliseconds; upstream timing semantics unverified |
-| `startTimestamp` | Integer, second-scale | Observed but not used as a freshness timestamp |
+| Observed field                 | Shape                      | Interpretation / limits                                               |
+| ------------------------------ | -------------------------- | --------------------------------------------------------------------- |
+| `id`                           | String                     | Live event identifier; not the numeric ATP fixture ID                 |
+| `matchId`                      | Compound string            | Distinct identifier, retained without interpreting its components     |
+| `participant1`, `participant2` | Strings                    | Player display names                                                  |
+| `league`, `tourType`           | Strings                    | Tournament label and tour dataset                                     |
+| `status`                       | String, observed `InPlay`  | Provider claim, not independent confirmation of current play          |
+| `score`                        | String or null             | Raw reported score, not yet parsed into tennis state                  |
+| `points`                       | String or null             | Current game score such as `30-40`, not a point history               |
+| `indicator`                    | String or null             | Meaning unverified; not mapped to a server                            |
+| `updatedAt`                    | Integer, millisecond-scale | Displayed as epoch milliseconds; upstream timing semantics unverified |
+| `startTimestamp`               | Integer, second-scale      | Observed but not used as a freshness timestamp                        |
 
 `src/live-events.ts` validates the observed envelope and required display fields,
 keeps nullable scores/identifiers explicit, ignores extra fields, and separates

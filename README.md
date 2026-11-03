@@ -1,247 +1,315 @@
-# Visual Tennis Companion — first data integration
+# Visual Tennis Companion
 
-A small backend-only TypeScript tool to test a Matchstat RapidAPI key against
-`GET https://tennis-api-atp-wta-itf.p.rapidapi.com/tennis/v2/upcoming/matches/atp?limit=10&autoPost=false&include=all&includeAll=false&page=1`.
-No mobile app or match engine yet.
+A tennis-data and scoring foundation for a visual-first mobile companion.
+The goal is to help fans understand a match when they cannot watch it.
+The mobile product is not built yet. This repository currently provides:
 
-## Offline engine replay — no API requests
+- Provider adapters and quota-explicit API inspection commands.
+- A tested tennis scoring engine and factual match moments.
+- Synthetic offline replays, including corrections and incomplete data.
+- A **frontend-ready development feed**: HTTP snapshots, SSE updates, reconnect
+  recovery, and a browser diagnostic client.
+
+**The development server is synthetic-only. Starting it does not call RapidAPI.**
+The provider-facing commands are separate and opt-in. The feed transport has been
+validated offline; continuous real-provider ingestion is not implemented.
+
+## 1. Install and run on your PC
+
+Use **Node.js 24 LTS** and npm. No database, Docker, paid subscription, or API key
+is required for offline development. We use Node's built-in TypeScript stripping;
+`tsc --noEmit` separately checks types. The compiler's `erasableSyntaxOnly` setting
+rejects syntax that Node cannot execute directly.
+
+First clone:
+
+```powershell
+git clone https://github.com/cmasked/tennis.git
+cd tennis
+npm ci
+```
+
+For your existing checkout:
 
 ```powershell
 cd D:\tennis\tennis
 git pull origin main
+npm ci
+```
+
+`npm ci` installs the exact lockfile dependencies. It contacts the package registry,
+not the tennis API. There are no runtime third-party dependencies in this slice. Prettier is a pinned
+development dependency for readable formatting. `npm run format` reformats the
+source/docs; `npm run format:check` checks formatting without editing files.
+The cloud checkout is `/workspace/tennis`; it is not a path on your Windows PC.
+
+## 2. Verify everything without spending API quota
+
+```powershell
 npm test
 npm run typecheck
+npm run format:check
+npm run feed:check
 npm run replay
 ```
 
-Replay uses clearly labeled synthetic snapshots and requires no key. It shows
-holds, breaks, saved break points, duplicate suppression, corrections/retractions,
-and explicit uncertainty. Additional scenarios demonstrate explicit best-of-three/
-five formats, set/match points, saved pressure points, and seven/ten-point
-tiebreak rules with service rotation. These canonical point-winner scenarios
-do not claim that provider tiebreak strings are already supported.
-See [the offline review guide](docs/offline-replay.md)
-for expected output, important files, and current limitations. You do not need
-to run any `api:*` command to review this increment.
+| Command              | What it checks                                                                  | Tennis API requests |
+| -------------------- | ------------------------------------------------------------------------------- | ------------------- |
+| `npm test`           | Rules, adapters, corrections, transport and real loopback HTTP/SSE tests        | 0                   |
+| `npm run typecheck`  | TypeScript contracts and erasable syntax                                        | 0                   |
+| `npm run feed:check` | Starts its own temporary server; verifies delivery/reconnect/recovery; stops it | 0                   |
+| `npm run replay`     | Prints synthetic scoring and match-story scenarios                              | 0                   |
+| `npm run dev`        | Starts the manual diagnostic server                                             | 0                   |
 
-## Requirements and installation
+Tests use synthetic data. The feed integration check forbids non-loopback fetches,
+and the replay integration test forbids fetch entirely. You do not need to paste
+all passing output after each change; share failures or confusing behavior.
 
-Node.js 24.10+ (Node 24 LTS recommended), npm, and an active RapidAPI subscription
-to Matchstat Tennis API — ATP WTA ITF. A valid RapidAPI key alone may not grant
-access to this particular API. Use the free plan for this experiment.
-
-```sh
-cd tennis
-npm ci
-cp -n .env.example .env
-```
-
-Edit `.env` privately and set `TENNIS_API_KEY`. Do not paste the key in chat,
-commit it, or put it in frontend code. Alternatively inject this environment
-variable using your environment's secure settings. For a proxy-backed binding,
-allow the destination `tennis-api-atp-wta-itf.p.rapidapi.com`.
-
-On Windows, run from your clone (for example `D:\tennis\tennis`). If `.env`
-already exists, keep it; otherwise copy `.env.example` to `.env`.
-
-## Test your key
-
-```sh
-npm run api:fixtures
-```
-
-Each invocation makes **one request**, with a 20-second timeout and no retries.
-It validates `total`, `matches`, participant and tournament fields, identifiers,
-and scheduled timestamps. It prints a readable match list with times in your
-computer's timezone, not the key, headers, or raw provider body. Unknown schedules
-and optional fields are labeled explicitly. This does not validate live scores,
-point-by-point coverage, latency, licensing, or all fixture fields.
-
-Optional: after confirming provider retention terms permit local development
-storage, save a redacted response for schema inspection:
-
-```sh
-npm run api:fixtures -- --save
-```
-
-Responses go into Git-ignored `local-data/`. Redaction removes credential-like
-fields and the supplied key; inspect any recorded data before sharing it.
-An empty `matches` array is reported as an empty page. Malformed required fields
-fail with a field path (for example `matches[0].player1.name`). Extra provider
-fields are ignored. No additional pages or live links are fetched automatically.
-
-## Troubleshooting
-
-- Missing key: set `TENNIS_API_KEY` in `.env` or the process environment.
-- HTTP 401/403: check the key, subscription to this API, and environment access policy.
-- HTTP 429: stop and check your quota; there are no automatic retries.
-- HTTP 5xx: provider error; check service status before trying again.
-- Network failure: check connectivity and allow the API host in environment settings.
-- Invalid JSON or error envelope: the command fails rather than treating it as fixtures.
-
-The command respects inherited HTTP/HTTPS proxy settings and TLS verification.
-It refuses redirects so authentication headers stay on the fixed API host.
-
-## Development checks
-
-```sh
-npm test
-npm run typecheck
-```
-
-Tests use synthetic HTTP responses and spend no API quota. They cover credential
-headers, missing configuration, empty results, malformed JSON, provider errors,
-rate limits, and network failures. They are not recorded tennis data.
-
-`src/client.ts` handles HTTP and JSON envelope validation.
-`src/matches.ts` validates observed fixture fields and formats the match list.
-`src/fixtures.ts` loads configuration, runs the adapter, and optionally saves data.
-See [API findings](docs/api-findings.md) for confirmed fields and open questions.
-The tests include synthetic match parsing, invalid fields, missing optional data,
-and timezone conversion; none consume API quota.
-
-## Discover currently live matches first
+## 3. Inspect the frontend feed in a browser
 
 ```powershell
-cd D:\tennis\tennis
-git pull origin main
-npm run api:live-list
+npm run dev
 ```
 
-Only the final command calls the tennis API: **one request, no retries** to
-`/tennis/v2/extend/api/events/live`. It prints a validated, readable snapshot with
-participants, tournament, tour, provider status, reported score, current game
-points, event ID, compound match ID, and provider update time. It does not fetch
-upcoming fixtures, inspect individual matches, poll, follow links, or save data.
+Open the address printed by the server (`http://127.0.0.1:3000`). Leave that
+terminal running. This page is a developer inspector, **not the product design**.
+It shows the current JSON snapshot and recent events using safe text rendering.
 
-Optional local filters (each invocation still makes one request):
+Use **Next synthetic snapshot** to walk through these cases:
+
+1. Initially Alex holds; sequence starts at 1.
+2. Jordan saves three break points and holds; an SSE update arrives.
+3. Jordan breaks Alex; a new moment appears.
+4. The source repeats the identical snapshot. No new sequence/event is emitted.
+5. A correction changes the previous break into an Alex hold. The old break is
+   retracted; the replacement snapshot and new hold arrive together.
+6. A point gap appears. `status` becomes `unknown`, `current` becomes `null`, and
+   uncertainty is explicit. Known game results can remain in progression/moments.
+
+Try **Disconnect stream**, advance a few steps, then **Reconnect stream**. The
+server replays missed updates if retained, otherwise sends a replacement reset.
+Use **Restart scenario** to return to the beginning. This advances the stream
+sequence; it does not reuse old IDs. There is no automatic ticking/polling.
+
+**Ctrl+C** stops the server. If port 3000 is busy:
 
 ```powershell
-npm run api:live-list -- --tour atp --tournament Paris
+$env:PORT=3001
+npm run dev
 ```
 
-Use **one** list command per check, not all examples in sequence. Filters are
-applied after fetching the feed; they do not reduce or increase request count.
-Times use your computer's timezone. Missing scores/points are explicitly marked
-unavailable. Events whose `updatedAt` is over 120 seconds before fetch are marked
-potentially stale; this is a heuristic, not a proven latency measurement. Unknown
-provider status strings are displayed rather than silently treated as InPlay.
+The server binds to loopback only. Opening it from a physical phone, adding
+public hosting, authentication or CORS requires a separate deployment decision.
 
-To inspect raw redacted JSON instead of the readable list, use `--raw`. This is
-an alternative command, not a second step; it makes another request if run again.
-Raw output is capped at 16000 characters; the readable list is not subject to
-that JSON display cap. Local filters do not apply in raw mode.
+## 4. Architecture and data flow
 
-Current game points are not point-by-point history. Server indicator semantics
-are unverified. Event IDs and compound match IDs are not fixture IDs; don't feed
-them into `api:live`. We still need a verified documented point-history route.
-
-## Inspect one ATP live lookup
-
-This is a separate fixture-to-live mapping tool, not a live-event discovery
-command. Use it only when you need a specific fixture lookup. Use the numeric
-**Match ID** from the fixture list (not a live-event ID or compound Live ID):
-
-```powershell
-git pull origin main
-npm run api:live -- 1389644
+```text
+Provider JSON                     Synthetic replay
+     |                                  |
+validate/map in adapters                 |
+     +----------> MatchSnapshot <-------+
+                       |
+         scoring rules + history reconstruction
+                       |
+       moments, pressure, progression, uncertainty
+                       |
+                FeedStore.ingest
+                       |
+            HTTP snapshot + SSE updates
+                       |
+          client reducer / diagnostic page
 ```
 
-The number above is from an earlier user-run fixture list, not a guarantee that
-this match is currently live or still available through the `source=today`
-lookup. Prefer a match scheduled around the time you test. This command makes
-exactly one request to the observed link pattern
-`/tennis/v2/matches/{matchId}/live?type=atp&source=today`.
-It does not first fetch fixtures, poll, retry, or follow additional links.
+Provider parsing lives in `src/adapters/`. Tennis rules live in `src/engine/` and
+`src/scoring.ts`. The feed knows our domain contract rather than raw RapidAPI
+response shapes. The synthetic source and eventual provider source can therefore
+share the same delivery path. **Only the synthetic source is wired to the server
+in this version**; provider validation does not automatically start ingestion.
 
-The command prints redacted provider JSON, capped at 16000 characters. Review
-it before sharing. It checks the JSON envelope but does not yet validate or
-interpret the unknown live schema. A successful lookup may contain a mapping
-rather than scores; missing/empty data does not establish lack of API coverage.
-We will inspect actual fields before implementing score or point-history parsing.
-An invalid ID or missing key fails without an API request. This inspector does
-not save provider data to disk. The same backend-only key from `.env` is used.
+### HTTP and SSE routes
 
-## Validate discovery, point history, statistics and timeline together
+| Route                                 | Purpose                                      |
+| ------------------------------------- | -------------------------------------------- |
+| `GET /health`                         | Readiness and explicit `synthetic-only` mode |
+| `GET /matches`                        | Available snapshots and current demo step    |
+| `GET /matches/synthetic-match`        | Authoritative replacement snapshot           |
+| `GET /matches/synthetic-match/events` | SSE stream                                   |
+| `POST /demo/step`                     | Advance one synthetic source snapshot        |
+| `POST /demo/reset`                    | Restart the synthetic scenario               |
+| `GET /`                               | Browser diagnostics                          |
 
-```powershell
-cd D:\tennis\tennis
-git pull origin main
-npm run api:validate -- --tour atp
-```
+Unknown matches/routes return 404. Invalid oversized cursors return 400. Foreign
+Host/Origin requests are rejected; mutation controls are local development only.
 
-**At most four API requests per invocation**: one live discovery, then three
-detail requests for one provider-reported InPlay event. The tool prefers the most
-recent provider update timestamp among matching events with usable identifiers.
-Add `--tournament Paris` to restrict selection; it never falls back to a different
-tournament. If no matching event is found, it stops after one request. Missing
-credentials fail before any request. Access/quota errors stop remaining detail
-requests. There are no retries, polling, additional pages or disk recordings.
+### The frontend contract
 
-It reports documented-schema checks, response player ordering/name agreement,
-raw per-game point score sequences (first sample games), game/sequence counts,
-statistics metrics (sample), and the last 12 timeline texts. Counts cover the
-entire fetched payload even when displayed examples are limited. This is an
-inspection command: comma-separated score entries are not yet interpreted as
-complete points or used to announce tennis events. Gaps and partial coverage
-remain possible. Empty sections are shown as zero, not hidden as successful
-coverage. Schema failures mark the run failed while independent sections are
-still checked; compare the output before deciding whether this provider meets
-our engine's requirements. No credentials or raw response files are saved.
+Read [contract.ts](src/feed/contract.ts) for the exact TypeScript definitions.
+Every snapshot includes:
 
-### Scoring analysis in the combined validator
+| Field                          | Meaning                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `schemaVersion`                | Public contract version; currently 1                                                                 |
+| `matchId`, `players`, `format` | Stable identity, ordered names, explicit scoring rules                                               |
+| `epoch`, `sequence`, `cursor`  | Process identity and monotonic delivered-update position                                             |
+| `source`                       | Synthetic/provider label, backend observation time, provider update time or null, ingestion revision |
+| `status`                       | Derived in-progress/completed/unknown; not a claim of live court action                              |
+| `current`                      | Sets, games, point score, server, pressure and completed sets; null if inconsistent/incomplete       |
+| `progression`                  | Per-game outcomes and warnings                                                                       |
+| `moments`                      | Stable factual hold/break/saved-pressure moments and uncertainty                                     |
+| `historyMoments`               | Point-positioned pressure/set/match events with evidence provenance                                  |
+| `uncertainty`                  | Reasons the feed cannot establish a complete current state                                           |
 
-`api:validate` also analyzes ordinary advantage games using the returned point
-sequences and game-score progression. It reports holds/breaks where the game
-winner and server are known, verified adjacent score transitions, break points
-saved within the verified prefix, BP marker disagreements, and possible omitted
-finishing points. A terminal point is labeled `reconstructed` only when the game
-result supplies a winner and exactly one legal next point for that winner would
-finish the game. It is never labeled as a directly observed feed point.
+Pressure is ordered by player 1/player 2. After match completion `current.server`
+is null. Complete set scores remain in `completedSets`; reset current games are
+not an extra played set. A score is only as authoritative as its supplied history.
 
-After gaps, duplicate scores, corrections or unsupported notation, further point
-attribution is withheld. Game-score gaps prevent winner attribution. Tiebreak
-point reconstruction is explicitly deferred; no default tiebreak format is
-assumed. This is a scoring foundation, not a complete live engine.
+`freshness(snapshot, now)` is evaluated at render time. Synthetic data is `replay`;
+a missing provider timestamp is `unknown`. A >120-second timestamp age is marked
+`stale` by a documented heuristic; future timestamps can indicate clock skew.
+An open SSE connection or heartbeat is **not** proof of fresh provider data.
 
-Supported timeline hold/break text is cross-checked against derived game results.
-Disagreements and unrecognized text remain visible; timeline text is not used to
-silently override point history. Histories with game-order gaps withhold alignment.
+### Updates, duplicate handling and corrections
 
-If statistics (or another detail response) fails schema validation, the command
-prints a bounded field/type tree without scalar values. This allows us to debug
-response nesting without saving raw data or spending additional requests. Such
-checks still count as failed. The request budget remains at most four.
+`FeedStore` accepts an authoritative domain snapshot with a caller-supplied
+positive revision. For future polling, assign that revision when the request
+begins so a slow older response cannot overwrite newer data. This revision is
+our ordering mechanism, not an invented provider event number.
 
-Offline verification consumes no tennis API quota:
+- Older/equal revisions are ignored.
+- Identical semantic snapshots advance the internal revision watermark without
+  emitting another event or announcing duplicate moments.
+- Changed snapshots are recomputed and get the next stream sequence number.
+- An `update` event contains the **entire new snapshot**, added/updated/removed
+  moments, and retracted history-moment IDs. Replace state; don't add score deltas.
+- Corrections can remove sporting claims. A removed moment is not a new point.
 
-```powershell
-npm test
-npm run typecheck
-```
+Consumers should use `src/feed/client.ts` for sequencing decisions. Its envelope
+parser validates protocol fields before applying network JSON. Upstream adapters
+validate provider data; the transport parser is not a replacement for them.
 
-### Bundled format-aware live check (when needed)
+### Reconnect and reset algorithm
 
-```powershell
-npm run api:validate -- --tour atp --format standard-bo3
-```
+An SSE frame has an event name, an ID like `epoch:sequence`, and one JSON payload.
+Browser EventSource sends `Last-Event-ID` on automatic reconnect. Other clients
+can send that header or use `?cursor=...`; the header takes precedence.
 
-This adds full-history scoring to the same four-request maximum, reusing the PBP
-response. It checks legal score transitions, game order, service order, set/match
-pressure and results, and marks reconstructed terminal points. Inconsistent or
-partial histories stop the prefix and count as a failed check. Missing histories
-are not filled in. Real tiebreak encoding still needs validation; only documented
-numeric notation and the player-1 prefix marker are supported provisionally.
+The in-memory journal retains the last **50 updates per match** by default.
+If the cursor is known and retained, subsequent updates are replayed. An initial,
+expired, invalid, future, or previous-process cursor gets a `reset` containing the
+latest full snapshot. Matching the current cursor waits for the next update.
 
-Choose the actual format: `standard-bo3` or `slam-men`. Neither tournament names
-nor tour membership prove a format; automatic discovery does not verify that a
-selected event is singles. Use tournament filtering appropriately and review the
-selected match. No new request is needed to review synthetic replay scenarios
-13–15 first. You do not need to send a transcript of every passing offline run.
+The shared client reducer ignores duplicate/older updates, detects sequence gaps,
+and requests a reset/full HTTP snapshot. A new process epoch is accepted through
+a reset. It does not silently stitch together discontinuous event histories.
 
-The statistics adapter accepts the observed `result` wrapper and the documented
-top-level shape. It preserves response player order and validates all returned
-metrics, even when only a sample is displayed. Empty metrics are unavailable,
-not invented zeros. Replay scenarios 16–17 demonstrate the concise match summary,
-conflicting live/completed status, and nested statistics using synthetic data.
-No API request is needed to review these cases.
+The diagnostic page implements the same recovery policy while displaying raw
+JSON/events. The automated diagnostic uses the shared reducer directly. These
+are developer clients, not a production mobile networking layer.
+
+## 5. Code reading guide
+
+Comments explain module responsibilities, trust boundaries and the important
+algorithms. Follow this order to audit the implementation:
+
+1. [model.ts](src/engine/model.ts): our scoring input.
+2. [matchstat-points.ts](src/adapters/matchstat-points.ts): provider field validation.
+3. [point-engine.ts](src/engine/point-engine.ts): pure point-winning rules and pressure lookahead.
+4. [history.ts](src/engine/history.ts): unique legal transition matching, missing-terminal reconstruction and stopping on gaps.
+5. [scoring.ts](src/scoring.ts): conservative game-level analysis when a full point stream is unavailable.
+6. [moments.ts](src/engine/moments.ts): templates, IDs and correction comparison.
+7. [contract.ts](src/feed/contract.ts), [store.ts](src/feed/store.ts): frontend shape, revision ordering and bounded replay journal.
+8. [server.ts](src/feed/server.ts): HTTP/SSE framing, cleanup and local-only controls.
+9. [client.ts](src/feed/client.ts), [sse.ts](src/feed/sse.ts): receive/recover rules and diagnostic frame parsing.
+10. [feed-check.ts](src/feed-check.ts), [feed.test.ts](test/feed.test.ts): runnable end-to-end checks and assertions.
+
+The scoring functions copy state before transitions. `pressureFor` tries the next
+legal point without recursively generating more pressure events. A set/match
+point exists only when that next point would finish the set/match.
+
+The history bridge tries both possible point winners against each supplied score
+record. Exactly one legal match is required. It reconstructs an omitted terminal
+point only if one legal next point yields the reported game result. Evidence is
+labeled `recorded-score-transition` or `reconstructed-terminal`; unsupported gaps
+are never filled with invented winners. Provider player order is preserved.
+
+Break-point saves from a verified prefix may be only a lower bound, hence “at
+least”. A timeline cross-check verifies supported provider text against game
+outcomes; it never silently overrides score data. Cumulative aces/statistics are
+not attributed to individual points without synchronization evidence.
+
+## 6. Optional real-provider validation and quota
+
+Do not run these commands during ordinary offline reviews. Read the request count
+first. Existing credentials must stay backend-only and must never be pasted into
+chat, a frontend bundle, screenshots, or Git commits.
+
+If needed, copy `.env.example` to `.env` and privately set `TENNIS_API_KEY`.
+Keep an existing `.env`; don't overwrite it. `.env`, dependencies and `local-data/`
+are Git-ignored. A RapidAPI key also needs access/subscription to this specific API.
+
+| Command                                                    | Maximum provider requests |
+| ---------------------------------------------------------- | ------------------------- |
+| `npm run api:fixtures`                                     | 1                         |
+| `npm run api:live-list -- --tour atp`                      | 1                         |
+| `npm run api:live -- <numeric-fixture-match-id>`           | 1                         |
+| `npm run api:validate -- --tour atp --format standard-bo3` | 4                         |
+
+The bundled check discovers a provider InPlay event, then fetches PBP, statistics
+and timeline for that match. It reuses those responses for scoring; it does not
+make more calls for each analysis. No suitable event stops after discovery.
+Access/quota errors stop remaining detail requests. No retries or polling.
+Choose the actual format explicitly: `standard-bo3` or `slam-men`; automatic
+selection does not prove singles/doubles or the applicable rules. Optional
+`--tournament Paris` filters selection locally, without fallback elsewhere.
+
+### Identifier mapping
+
+- **Fixture Match ID:** numeric, used by the fixture-to-live lookup.
+- **Live event ID:** from discovery `results[].id`, used by statistics/timeline.
+- **Compound matchKey:** player1Id-player2Id-tournamentId-roundId, used by PBP.
+- `matchId` can be a deprecated compound alias in live responses. These identifier
+  families must not be substituted merely because some values happen to match.
+
+Provider requests preserve proxy/TLS verification, refuse redirects, time out
+within 20 seconds, and keep secrets in headers. HTTP 401/403 needs key/subscription
+or network diagnosis; HTTP 429 means stop and check quota. Schema failures print
+bounded field/type diagnostics, not raw response values. Statistics support both
+the documented top-level shape and the observed `result` wrapper.
+
+`api:fixtures -- --save` is an opt-in recording path only after checking provider
+retention permission. Other diagnostic/feed commands do not record raw responses.
+No retained real provider data is needed by our synthetic replay or tests.
+
+## 7. What is verified, and what remains
+
+**Verified offline:** scoring rules and explicit formats, synthetic adapters,
+corrections/retractions, duplicate/out-of-order source handling, HTTP snapshots,
+SSE delivery, cursor replay/reset, client gap recovery and server startup.
+
+**Observed through user-run real calls:** fixtures/live discovery, one complete
+ordinary-game history reconstructing a reported 1–2 set result, 24/24 timeline
+agreements, and the nested statistics envelope. Those observations are not live
+latency measurements or coverage guarantees.
+
+**Still required before a production live feed:**
+
+- Wire a deliberate, quota-budgeted provider ingestion process into `FeedStore`.
+  The current server has no continuous RapidAPI or Socket.IO connection.
+- Verify real tiebreak encoding, actual statistic-value variations, timestamps,
+  corrections/recovery and coverage across the tournaments we intend to show.
+- Select the applicable scoring format from reliable competition metadata.
+- Add durable storage/ordering, shared service behavior and notification deduplication.
+  This development journal disappears on restart and does not provide exactly-once delivery.
+- Evaluate authentication, rate limits, deployment and multi-instance distribution.
+- Confirm caching, retention, redistribution and commercial display rights.
+- Evaluate the paid REST/streaming plan only after verifying its documented payloads,
+  limits, costs and reconnect semantics. Streaming alone does not guarantee completeness.
+
+No standalone match tiebreak replacing a set, retirement/walkover event engine,
+full doubles receiving-side rules, or complete Catch Me Up ranking exists yet.
+The frontend can now integrate against a versioned synthetic feed while these
+real-data limitations remain explicit. This is a development milestone, not a
+claim that production validation is complete.
+
+More detail: [offline replay guide](docs/offline-replay.md),
+[provider findings](docs/api-findings.md), [feed design](docs/feed-design.md).

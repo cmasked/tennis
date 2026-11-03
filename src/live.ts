@@ -1,8 +1,11 @@
-import { fetchLiveLookup, formatLiveInspection } from './live-inspector.ts';
+/**
+ * Single fixture-to-live mapping CLI. This is not live discovery and does not follow links.
+ */
+import { fetchLiveLookup, formatLiveInspection } from "./live-inspector.ts";
 
 const args = process.argv.slice(2);
 if (args.length !== 1) {
-  console.error('Usage: npm run api:live -- <numeric-match-id>');
+  console.error("Usage: npm run api:live -- <numeric-match-id>");
   process.exitCode = 1;
 } else {
   try {
@@ -10,7 +13,11 @@ if (args.length !== 1) {
     const payload = await fetchLiveLookup(args[0], key);
     console.log(formatLiveInspection(payload, key!.trim()));
   } catch (error) {
-    console.error(error instanceof Error ? error.message : 'Unexpected live lookup failure.');
+    console.error(
+      error instanceof Error
+        ? error.message
+        : "Unexpected live lookup failure.",
+    );
     process.exitCode = 1;
   }
 }

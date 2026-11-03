@@ -13,10 +13,15 @@
     "api:live": "node --use-env-proxy --env-file-if-exists=.env src/live.ts",
     "api:live-list": "node --use-env-proxy --env-file-if-exists=.env src/live-list.ts",
     "api:validate": "node --use-env-proxy --env-file-if-exists=.env src/validate.ts",
-    "replay": "node src/replay.ts"
+    "replay": "node src/replay.ts",
+    "dev": "node src/serve.ts",
+    "feed:check": "node src/feed-check.ts",
+    "format": "prettier --write src test package.json tsconfig.json README.md docs",
+    "format:check": "prettier --check src test package.json tsconfig.json README.md docs"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "prettier": "3.9.10",
     "typescript": "^7.0.2"
   }
 }
