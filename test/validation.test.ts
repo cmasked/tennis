@@ -86,3 +86,15 @@ test('gap in full-history bridge counts as a failed check while preserving all f
   const result = await validateLiveMatch('dummy', { format: STANDARD_BEST_OF_THREE }, async () => new Response(JSON.stringify(payloads.shift())));
   assert.equal(result.calls, 4); assert.equal(result.failures, 1);
 });
+
+test('observed nested statistics envelope completes the bundled run with no extra requests', async () => {
+  const { STANDARD_BEST_OF_THREE } = await import('../src/engine/point-engine.ts');
+  const stats = statistics();
+  const payloads = [discovery(), points(), { success: true, result: { player1: stats.player1, player2: stats.player2, statistics: stats.statistics } }, timeline];
+  const logs: string[] = [];
+  const result = await validateLiveMatch('dummy', { format: STANDARD_BEST_OF_THREE }, async () => new Response(JSON.stringify(payloads.shift())), s => logs.push(s));
+  assert.equal(result.calls, 4); assert.equal(result.failures, 0);
+  assert.match(logs.join('\n'), /Statistics envelope: result/);
+  assert.match(logs.join('\n'), /MATCH SUMMARY/);
+  assert.doesNotMatch(logs.join('\n'), /STATISTICS: FAILED/);
+});

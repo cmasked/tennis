@@ -1,3 +1,5 @@
+import { adaptMatchstatStatistics } from './adapters/matchstat-statistics.ts';
+import { summarizeHistory } from './engine/summary.ts';
 import { reconstructHistory, formatHistory } from './engine/history.ts';
 import type { ScoringFormat } from './engine/point-engine.ts';
 import { adaptMatchstatPoints } from './adapters/matchstat-points.ts';
@@ -61,28 +63,16 @@ export function inspectPoints(payload: unknown, event: LiveEvent): string {
   return lines.join('\n');
 }
 export function inspectStatistics(payload: unknown, event: LiveEvent): string {
-  const root = obj(payload, 'statistics');
-  if (root.success !== true) return fail('statistics.success');
-  const first = name(root.player1, 'player1'), second = name(root.player2, 'player2');
-  const periods = obj(root.statistics, 'statistics');
-  const lines = [identity(first, second, event), `Response order: ${first} / ${second}`, `Periods supplied: ${Object.keys(periods).join(', ') || '(none)'}`];
-  let count = 0;
-  for (const [period, value] of Object.entries(periods)) {
-    for (const [category, value2] of Object.entries(obj(value, period))) {
-      for (const [metric, value3] of Object.entries(obj(value2, category))) {
-        const sides = obj(value3, metric);
-        const values = ['player1', 'player2'].map(side => {
-          const cell = obj(sides[side], `${metric}.${side}`);
-          const value = num(cell.value, `${metric}.${side}.value`);
-          if (cell.percentage !== undefined) num(cell.percentage, 'percentage');
-          return `${value}${cell.total === undefined ? '' : '/' + num(cell.total, 'total')}`;
-        });
-        count++;
-        if (lines.length < 24) lines.push(`${period}.${category}.${metric}: ${values[0]} / ${values[1]}`);
-      }
-    }
+  const stats = adaptMatchstatStatistics(payload);
+  const [first, second] = stats.players;
+  const lines = [identity(first, second, event), `Statistics envelope: ${stats.envelope}.`, `Response order: ${first} / ${second}`, `Periods supplied: ${stats.periods.join(', ') || '(none)'}`];
+  for (const metric of stats.metrics.slice(0, 20)) {
+    const values = metric.values.map(cell => `${cell.value}${cell.total === undefined ? '' : '/' + cell.total}${cell.percentage === undefined ? '' : ` (${cell.percentage}%)`}`);
+    lines.push(`${metric.period}.${metric.category}.${metric.name}: ${values[0]} / ${values[1]}`);
   }
-  lines.push(`Validated metrics: ${count}. Values follow response player order. These are cumulative statistics, not point-ending labels.`);
+  lines.push(`Validated metrics: ${stats.metrics.length}. Values follow response player order. These are cumulative statistics, not point-ending labels.`);
+  if (stats.metrics.length > 20) lines.push('Showing first 20 metrics; all returned metrics were validated.');
+  if (!stats.metrics.length) lines.push('No statistics metrics supplied; do not interpret unavailable values as zero.');
   return lines.join('\n');
 }
 export function inspectTimeline(payload: unknown): string {
@@ -125,6 +115,7 @@ export async function validateLiveMatch(key: string | undefined, filters: LiveFi
             log(`Explicit format: best-of-${filters.format.bestOf}, ${filters.format.gameMode}.`);
             const history = reconstructHistory(snapshot, filters.format);
             log(formatHistory(history, snapshot.players));
+            log(summarizeHistory(snapshot, history, event.status));
             if (history.stopped) failures++;
           }
         } else log('FORMAT-AWARE HISTORY not run: supply --format standard-bo3 or slam-men explicitly.');

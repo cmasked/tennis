@@ -128,3 +128,15 @@ four requests**, not a fifth request. Choose the actual match format explicitly;
 command's selection filters do not independently verify singles/doubles or format.
 Without `--format`, existing per-game inspection still works, but no full-history
 pressure reconstruction runs. A stopped bridge counts as a failed check.
+
+## Latest review scenarios
+
+- **16:** concise match result and an explicit warning when discovery says InPlay
+  despite a completed history. Historical consistency does not prove live freshness.
+- **17:** synthetic statistics under the observed `result` wrapper, with reversed
+  player order to show why side identity must be preserved. Counts stay cumulative;
+  no individual ace point is inferred.
+
+The nesting fix is tested offline. A further real API request is not required
+just to confirm that `result.player1` can be read. Actual metric variations and
+real tiebreak encodings remain candidates for a future purposeful live check.

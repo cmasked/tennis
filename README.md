@@ -238,3 +238,10 @@ nor tour membership prove a format; automatic discovery does not verify that a
 selected event is singles. Use tournament filtering appropriately and review the
 selected match. No new request is needed to review synthetic replay scenarios
 13–15 first. You do not need to send a transcript of every passing offline run.
+
+The statistics adapter accepts the observed `result` wrapper and the documented
+top-level shape. It preserves response player order and validates all returned
+metrics, even when only a sample is displayed. Empty metrics are unavailable,
+not invented zeros. Replay scenarios 16–17 demonstrate the concise match summary,
+conflicting live/completed status, and nested statistics using synthetic data.
+No API request is needed to review these cases.

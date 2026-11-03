@@ -11,7 +11,7 @@ export function describeShape(value: unknown): string {
       lines.push(`${path}: object`);
       if (depth < 4) for (const [key, child] of Object.entries(item).slice(0, 20)) {
         // Only safe ordinary field labels; arbitrary keys can contain secrets.
-        if (/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(key) && !/key|token|secret|auth|password|cookie/i.test(key)) walk(child, `${path}.${key}`, depth + 1);
+        if (/^[A-Za-z0-9][A-Za-z0-9_]{0,39}$/.test(key) && !/key|token|secret|auth|password|cookie/i.test(key)) walk(child, `${path}.${key}`, depth + 1);
         else lines.push(`${path}.[field omitted]: ${Array.isArray(child) ? 'array' : child === null ? 'null' : typeof child}`);
       }
     } else lines.push(`${path}: ${typeof item}`);

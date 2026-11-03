@@ -1,3 +1,5 @@
+import { adaptMatchstatStatistics } from '../adapters/matchstat-statistics.ts';
+import { summarizeHistory } from '../engine/summary.ts';
 import { adaptMatchstatPoints } from '../adapters/matchstat-points.ts';
 import { reconstructHistory, formatHistory } from '../engine/history.ts';
 import { STANDARD_BEST_OF_THREE } from '../engine/point-engine.ts';
@@ -20,10 +22,19 @@ export function replayProviderBridge(): string {
   const gap = structuredClone(payload); gap.result.sets[0].games[0].fifteens_content = '15:0,40:0';
   const gapSnapshot = adaptMatchstatPoints(gap, 'synthetic-provider-gap');
   const tie = adaptMatchstatPoints(syntheticProviderTiebreak(), 'synthetic-provider-tie');
+  const stats = adaptMatchstatStatistics({ success: true, result: {
+    player1: { name: 'Jordan Example' }, player2: { name: 'Alex Example' }, statistics: {
+      ALL: { service: { aces: { player1: { value: 2 }, player2: { value: 3 } } } },
+    },
+  } });
   return ['\nPROVIDER-TO-ENGINE REPLAY — synthetic payloads, explicit standard best-of-three.',
     '13. Complete ordinary-game history passes through adapter and format-aware scoring.', formatHistory(reconstructHistory(snapshot, STANDARD_BEST_OF_THREE), snapshot.players),
     '\n14. Missing point stops full-history reconstruction instead of inventing a match result.', formatHistory(reconstructHistory(gapSnapshot, STANDARD_BEST_OF_THREE), gapSnapshot.players),
     '\n15. Documented numeric tiebreak notation and player-1 serving markers, tested synthetically.', formatHistory(reconstructHistory(tie, STANDARD_BEST_OF_THREE), tie.players),
     'Real-provider tiebreak examples and feed completeness remain unverified. Other star placements are rejected, not guessed.',
+    '\n16. Concise match summary and conflicting live-status warning.',
+    summarizeHistory(snapshot, reconstructHistory(snapshot, STANDARD_BEST_OF_THREE), 'InPlay'),
+    '\n17. Synthetic statistics in the observed result wrapper (reversed player order).',
+    `Envelope: ${stats.envelope}; ${stats.players[0]} / ${stats.players[1]}; aces ${stats.metrics[0].values[0].value} / ${stats.metrics[0].values[1].value}. No individual point endings inferred.`,
   ].join('\n');
 }

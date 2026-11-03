@@ -238,3 +238,28 @@ combined live check at at most four calls. Offline tests now cover this integrat
 and ensure a stopped bridge is counted as a failed validation check. No real API
 requests were made to implement it. Statistics differences still await the safe
 shape output from a future bundled real-data run.
+
+## Successful real history reconstruction and observed statistics wrapper
+
+The founder's next combined run reconstructed 141 recorded score transitions
+plus 24 explicitly reconstructed terminal points, producing a 1–2 set result.
+All 24 supported timeline entries agreed with the derived game outcomes. These
+are concrete consistency results for one supplied match, not proof of general
+coverage, latency, or tiebreak handling. The full raw payload was not retained.
+
+The statistics schema diagnostic established `success` at the top level and
+`result.player1`, `result.player2`, `result.statistics`, `result.dateOnly` inside
+a wrapper. The adapter now supports that explicit observed envelope as well as
+the documented top-level shape. It rejects ambiguous wrappers, malformed metric
+values, impossible ratios and out-of-range percentages. Synthetic tests cover
+both shapes, set periods, whole-match totals, reversed player order, empty
+statistics, invalid data and the existing four-request validation integration.
+Real metric values still need eventual observation; fixing nesting alone does
+not establish that every provider metric follows the documented shape.
+
+A concise history summary now distinguishes player-order scores, match outcome,
+verified-prefix pressure saves and reconstructed terminal points. If discovery
+reports InPlay while the explicit-format history completes the match, it flags
+that inconsistency instead of treating the entry as evidence of current play.
+No additional API requests were made for this fix. Replay scenarios 16 and 17
+exercise the summary and nested statistics shape with entirely synthetic data.
